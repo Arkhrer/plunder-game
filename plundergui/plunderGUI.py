@@ -1,7 +1,11 @@
+#from ssl import _PasswordType
 from tkinter import *
+import mysql.connector
 #from turtle import bgcolor
 from PIL import ImageTk, Image
 
+conn = mysql.connector.connect(user = "root", host = "localhost", passwd = "123456", database='mydb')
+cursor = conn.cursor()
 
 #----------JANELA CADASTRO----------#
 def criaCadastro():
@@ -11,7 +15,7 @@ def criaCadastro():
     janelaCadastro.geometry('320x350')
     janelaCadastro.resizable(width=False, height=False)
     janelaCadastro.config(bg=corBaseJanela)
-
+    
     textoUsuario = Label(janelaCadastro,font=('', 15), bg=corBaseJanela, fg='white', text="Usuário:")
     textoUsuario.place(x=20, y=100)
     
@@ -33,11 +37,33 @@ def criaCadastro():
     textoCadastroC = Label(janelaCadastro, font=('', 35), bd=0, bg=corBaseJanela, fg='white', text="CADASTRO")
     textoCadastroC.place(x=30, y=20)
 
-    botaoCadastra = Button(janelaCadastro, width=20, height=4, text = "Cadastrar")
+    botaoCadastra = Button(janelaCadastro, width=20, height=4, text = "Cadastrar", command = lambda: cadastraCheck(entradaUsuario, entradaSenha, entradaEmail))
     botaoCadastra.config(bg = corBaseBotao)
     botaoCadastra.place(x=80, y = 245)
 
+#Ações a serem executadas quando o botão for pressionado
+def cadastraCheck(userEnt, passwordEnt, emailEnt):
+    usuario = userEnt.get()
+    email = emailEnt.get()
+    senha = passwordEnt.get()
+    idconta = 30
+    datacria = "2001-01-01"
+    perguntaseg = 1
+    respostaseg = "dog"
+    create_account = ( """INSERT INTO `Conta` (`Usuário`, `idConta`, `Senha`, `E-mail`,
+    `Data de Criação`, `Pergunta de Segurança_idPergunta de Segurança`, `Resposta de Segurança`) VALUES 
+    (%s, %s, %s, %s, %s, %s, %s)""")
 
+    cursor.execute(create_account, (usuario, idconta, senha, email, datacria, perguntaseg, respostaseg))
+    conn.commit()
+    print("deucerto")
+
+
+
+    
+    
+
+    
 
 #----------JANELA LOGIN----------#
 def criaLogin():
@@ -63,13 +89,30 @@ def criaLogin():
     textoLoginL = Label(janelaLogin, font=('', 35), bd=0, bg=corBaseJanela, fg='white', text="LOGIN")
     textoLoginL.place(x=80, y=20)
 
-    botaoLoga = Button(janelaLogin, width=20, height=4, text = "Login", command=criaHome)
+    botaoLoga = Button(janelaLogin, width=20, height=4, text = "Login", command=lambda: loginCheck(entradaUsuarioL, entradaSenhaL))
     botaoLoga.config(bg = corBaseBotao)
     botaoLoga.place(x=80, y = 245)
+    
+#--------FUNCAO DE LOGIN-----------#
 
+def loginCheck(userEnt, passwordEnt):
+    username = userEnt.get()
+    password = passwordEnt.get()
+
+    login = "SELECT `Usuário`, `Senha` from `Conta` WHERE  `Conta`.`Usuário`= %s AND `Conta`.`Senha` = %s"
+
+    cursor.execute(login, (username, password))
+
+    #oqueachou = cursor.fetchall()
+
+    if len(cursor.fetchall()) > 0:
+        criaHome(username)
+    else:
+        print("deuruim")
+    
 
 #----------JANELA HOME----------#
-def criaHome():
+def criaHome(user):
     global janelaHome
 
     #Se houver alguma outra janela aberta, fecha ela antes de abrir a Home
@@ -97,7 +140,13 @@ def criaHome():
     janelaHome.resizable(width=False, height=False)
     janelaHome.config(bg=corBaseJanela)
 
-    textoNome = Label(janelaHome,font=('', 25), bg=corBaseJanela, fg='white', text="NOME")#Text TEMPORARIO, MUDAR COM A DATABASE
+    nomequery = "SELECT `Usuário` from `Conta` WHERE  `Conta`.`Usuário`= %s"
+
+    cursor.execute(nomequery, (user,))
+    oqueachou = cursor.fetchall()
+    print(oqueachou)
+    
+    textoNome = Label(janelaHome,font=('', 25), bg=corBaseJanela, fg='white', text=oqueachou[0][0])#Text TEMPORARIO, MUDAR COM A DATABASE
     textoNome.place(x=285, y=15)
 
     #Frame que segura as informações no centro da página
@@ -193,3 +242,4 @@ botaoLogin.place(x=400, y = 350)
 
 
 inicial.mainloop()
+conn.close()
