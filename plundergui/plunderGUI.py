@@ -4,8 +4,8 @@ import mysql.connector
 #from turtle import bgcolor
 from PIL import ImageTk, Image
 
-conn = mysql.connector.connect(user = "root", host = "localhost", passwd = "123456", database='mydb')
-cursor = conn.cursor()
+#conn = mysql.connector.connect(user = "root", host = "localhost", passwd = "123456", database='mydb')
+#cursor = conn.cursor()
 
 #----------JANELA CADASTRO----------#
 def criaCadastro():
@@ -50,20 +50,15 @@ def cadastraCheck(userEnt, passwordEnt, emailEnt):
     datacria = "2001-01-01"
     perguntaseg = 1
     respostaseg = "dog"
-    create_account = ( """INSERT INTO `Conta` (`Usuário`, `idConta`, `Senha`, `E-mail`,
-    `Data de Criação`, `Pergunta de Segurança_idPergunta de Segurança`, `Resposta de Segurança`) VALUES 
-    (%s, %s, %s, %s, %s, %s, %s)""")
+    #create_account = ( """INSERT INTO `Conta` (`Usuário`, `idConta`, `Senha`, `E-mail`,
+    #`Data de Criação`, `Pergunta de Segurança_idPergunta de Segurança`, `Resposta de Segurança`) VALUES 
+   #(%s, %s, %s, %s, %s, %s, %s)""")
 
-    cursor.execute(create_account, (usuario, idconta, senha, email, datacria, perguntaseg, respostaseg))
-    conn.commit()
-    print("deucerto")
+    #cursor.execute(create_account, (usuario, idconta, senha, email, datacria, perguntaseg, respostaseg))
+    #conn.commit()
+    #print("deucerto")
 
 
-
-    
-    
-
-    
 
 #----------JANELA LOGIN----------#
 def criaLogin():
@@ -99,16 +94,16 @@ def loginCheck(userEnt, passwordEnt):
     username = userEnt.get()
     password = passwordEnt.get()
 
-    login = "SELECT `Usuário`, `Senha` from `Conta` WHERE  `Conta`.`Usuário`= %s AND `Conta`.`Senha` = %s"
+    #login = "SELECT `Usuário`, `Senha` from `Conta` WHERE  `Conta`.`Usuário`= %s AND `Conta`.`Senha` = %s"
 
-    cursor.execute(login, (username, password))
+    #cursor.execute(login, (username, password))
 
     #oqueachou = cursor.fetchall()
 
-    if len(cursor.fetchall()) > 0:
-        criaHome(username)
-    else:
-        print("deuruim")
+    #if len(cursor.fetchall()) > 0:
+    criaHome(username)
+    #else:
+        #print("deuruim")
     
 
 #----------JANELA HOME----------#
@@ -140,13 +135,13 @@ def criaHome(user):
     janelaHome.resizable(width=False, height=False)
     janelaHome.config(bg=corBaseJanela)
 
-    nomequery = "SELECT `Usuário` from `Conta` WHERE  `Conta`.`Usuário`= %s"
+    #nomequery = "SELECT `Usuário` from `Conta` WHERE  `Conta`.`Usuário`= %s"
 
-    cursor.execute(nomequery, (user,))
-    oqueachou = cursor.fetchall()
-    print(oqueachou)
+   #cursor.execute(nomequery, (user,))
+   #oqueachou = cursor.fetchall()
+   #print(oqueachou)
     
-    textoNome = Label(janelaHome,font=('', 25), bg=corBaseJanela, fg='white', text=oqueachou[0][0])#Text TEMPORARIO, MUDAR COM A DATABASE
+    textoNome = Label(janelaHome,font=('', 25), bg=corBaseJanela, fg='white', text='oqueachou[0][0]')#Text TEMPORARIO, MUDAR COM A DATABASE
     textoNome.place(x=285, y=15)
 
     #Frame que segura as informações no centro da página
@@ -168,11 +163,11 @@ def criaHome(user):
 
     #Botões do menu
 
-    botaoLoja = Button(janelaHome, width=20, height=2, text = "Loja", relief='flat')
+    botaoLoja = Button(janelaHome, width=20, height=2, text = "Loja", relief='flat', command = criaLoja)
     botaoLoja.config(bg = corBaseBotao)
     botaoLoja.pack(anchor="w", pady=(70, 10), padx=(20, 0))
 
-    botaoTripulacao = Button(janelaHome, width=20, height=2, text = "Tripulação", relief='flat')
+    botaoTripulacao = Button(janelaHome, width=20, height=2, text = "Tripulação", relief='flat', command = criaTripulacao)
     botaoTripulacao.config(bg = corBaseBotao)
     botaoTripulacao.pack(anchor="w", pady=10, padx=(20, 0))
 
@@ -206,10 +201,83 @@ def criaHome(user):
     leT6.pack(anchor="w", pady= 5, padx=(5, 0))
 
 
+#----------JANELA LOJA----------#
+def criaLoja():
+    janelaLoja = Tk()
+    janelaLoja.title('Loja')
+    janelaLoja.geometry('700x550')
+    janelaLoja.resizable(width=False, height=False)
+    janelaLoja.config(bg=corBaseJanela)
+
+    textoLoja = Label(janelaLoja ,font=('', 25), bg=corBaseJanela, fg='white', text='LOJA')#Text TEMPORARIO, MUDAR COM A DATABASE
+    textoLoja.place(x = 120, y = 10)
+
+    #Loja para comprar itens
+    lojaLoja = Listbox(janelaLoja, bg = corBaseJanela, selectmode = 'single', relief = 'flat', font =('TkDefaultFont 11', 13), fg = 'white')
+    lojaLoja.place(x = 25, y = 60, width = 300, height = 350)
+
+    #Popula a lista da loja
+    listaLoja = [{'Nome': 'Laranja', 'Preco': '500 Dobrões'},
+               {'Nome': 'Espada', 'Preco': '5000 Dobrões' },]  # Lista de dicionários, cada item da lista é uma linha na loja - POPULAR COM ITENS DO BANCO DE DADOS
+
+    maxspace = len(max(listaLoja, key=lambda x:len(x['Nome']))['Nome']) + 6
+    for i in range(len(listaLoja)):
+        lojaLoja.insert(END, f"{listaLoja[i]['Nome'].ljust(maxspace)}{listaLoja[i]['Preco'].rjust(maxspace)}")
+
+    #Botão de comprar itens
+    botaoCompra = Button(janelaLoja, width=21, height=4, relief='flat', text = "Comprar") # COLOCAR COMANDO QUE EXECUTA A COMPRA DE ACORDO COM O PREÇO
+    botaoCompra.config(bg = corBaseBotao)
+    botaoCompra.place(x=87, y = 420)
 
 
+    #Inventario para vender itens - POPULAR COM ITENS DO BANCO DE DADOS
 
-#----------JANELA INICIAL----------#
+    textoInv = Label(janelaLoja ,font=('', 25), bg=corBaseJanela, fg='white', text='INVENTÁRIO')#Text TEMPORARIO, MUDAR COM A DATABASE
+    textoInv.place(x = 425, y = 10)
+
+    lojaInventario = Listbox(janelaLoja, bg = corBaseJanela, selectmode = 'single', relief = 'flat', font =('TkDefaultFont 11', 13), fg = 'white')
+    lojaInventario.place(x = 375, y = 60, width = 300, height = 350)
+
+    listaInv = [{'Nome': 'Laranja', 'Preco': '500 Dobrões'},
+               {'Nome': 'Espada', 'Preco': '5000 Dobrões' },]  # Lista de dicionários, cada item da lista é uma linha na loja - POPULAR COM ITENS DO BANCO DE DADOS
+
+    maxspace = len(max(listaInv, key=lambda x:len(x['Nome']))['Nome']) + 6
+    for i in range(len(listaInv)):
+        lojaInventario.insert(END, f"{listaInv[i]['Nome'].ljust(maxspace)}{listaInv[i]['Preco'].rjust(maxspace)}")
+
+
+    botaoVende = Button(janelaLoja, width=21, height=4, relief='flat', text = "Vender") # COLOCAR COMANDO QUE EXECUTA A VENDA DE ACORDO COM O PREÇO
+    botaoVende.config(bg = corBaseBotao)
+    botaoVende.place(x=450, y = 420)
+
+
+#----------JANELA TRIPULAÇÃO----------#
+def criaTripulacao():
+    janelaTripulacao = Tk()
+    janelaTripulacao.title('Tripulação')
+    janelaTripulacao.geometry('300x400')
+    janelaTripulacao.resizable(width=False, height=False)
+    janelaTripulacao.config(bg=corBaseJanela)
+
+    textoTrip = Label(janelaTripulacao ,font=('', 35), bg=corBaseJanela, fg='white', text='Tripulação')#Text TEMPORARIO, MUDAR COM A DATABASE
+    textoTrip.pack(pady = 15)
+
+    textoMembros = Label(janelaTripulacao ,font=('', 20), bg=corBaseJanela, fg='white', text='0 Membros')#Quantidade variável
+    textoMembros.pack(pady = (30, 10))
+
+    textoValorMembro = Label(janelaTripulacao ,font=('', 20), bg=corBaseJanela, fg='white', text='100 Dobrões\n por membro')#Quantidade variável
+    textoValorMembro.pack(pady = (30, 10))
+
+    botaoContrata = Button(janelaTripulacao, width=21, height=4, relief='flat', text = "Contratar\nMembro", font=('', 15, 'bold')) #CONTRATA MEMBRO TRIPULAÇÃO, VALOR AUMENTA A CADA MEMBRO
+    botaoContrata.config(bg = corBaseBotao)
+    botaoContrata.pack(pady = 30)
+
+
+#----------JANELA NAVIO----------#
+#TBD
+
+
+#----------JANELA INICIAL-------------#
 corBaseJanela = '#434343' #Cinza escuro
 corBaseBotao = '#B9a82b' #Cinza
 
@@ -242,4 +310,4 @@ botaoLogin.place(x=400, y = 350)
 
 
 inicial.mainloop()
-conn.close()
+#conn.close()
