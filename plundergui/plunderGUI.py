@@ -171,15 +171,15 @@ def criaHome(user):
     botaoTripulacao.config(bg = corBaseBotao)
     botaoTripulacao.pack(anchor="w", pady=10, padx=(20, 0))
 
-    botaoNavio = Button(janelaHome, width=20, height=2, text = "Navio", relief='flat')
+    botaoNavio = Button(janelaHome, width=20, height=2, text = "Navio", relief='flat', command = criaNavio)
     botaoNavio.config(bg = corBaseBotao)
     botaoNavio.pack(anchor="w", pady=10, padx=(20, 0))
 
-    botaoGuilda = Button(janelaHome, width=20, height=2, text = "Guilda", relief='flat')
+    botaoGuilda = Button(janelaHome, width=20, height=2, text = "Guilda", relief='flat', command = criaGuilda)
     botaoGuilda.config(bg = corBaseBotao)
     botaoGuilda.pack(anchor="w", pady=10, padx=(20, 0))
 
-    botaoMar = Button(janelaHome, width=14, height=5, text = "MAR", font=('', 15, 'bold'), relief='flat')
+    botaoMar = Button(janelaHome, width=14, height=5, text = "MAR", font=('', 15, 'bold'), relief='flat', command = criaMar)
     botaoMar.config(bg = corBaseBotao)
     botaoMar.pack(anchor="w", pady=30, padx=(20, 0))
 
@@ -274,8 +274,196 @@ def criaTripulacao():
 
 
 #----------JANELA NAVIO----------#
-#TBD
+def criaNavio():
+    janelaNavio = Tk()
+    janelaNavio.title('Cais')
+    janelaNavio.geometry('1200x550')
+    janelaNavio.resizable(width=False, height=False)
+    janelaNavio.config(bg=corBaseJanela)
 
+    textoCais = Label(janelaNavio, font=('', 25), bg=corBaseJanela, fg='white', text='Cais')
+    textoCais.place(x = 120, y = 10)
+
+    #-------------------Cais para comprar navios
+    lojaCais = Listbox(janelaNavio, bg = corBaseJanela, selectmode = 'single', relief = 'flat', font =('TkDefaultFont 11', 13), fg = 'white')
+    lojaCais.place(x = 25, y = 60, width = 300, height = 350)
+
+    #Popula a lista do cais
+    listaCais = [{'Nome': 'Escuna', 'Preco': '15000 Dobrões'},
+               {'Nome': 'Galeão', 'Preco': '50000 Dobrões' },
+               {'Nome': 'Canoa', 'Preco': '2000 Dobrões'}]  # Lista de dicionários, cada item da lista é uma linha na loja - POPULAR COM ITENS DO BANCO DE DADOS
+
+    maxspace = len(max(listaCais, key=lambda x:len(x['Nome']))['Nome']) + 6
+    for i in range(len(listaCais)):
+        lojaCais.insert(END, f"{listaCais[i]['Nome'].ljust(maxspace)}{listaCais[i]['Preco'].rjust(maxspace)}")
+
+    #Botão de comprar navios
+    botaoCompra = Button(janelaNavio, width=21, height=4, relief='flat', text = "Comprar") # COLOCAR COMANDO QUE EXECUTA A COMPRA DE ACORDO COM O PREÇO
+    botaoCompra.config(bg = corBaseBotao)
+    botaoCompra.place(x=87, y = 420)
+
+
+    #-----------------Descrição do navio selecionado no Cais
+    #ALTERAR ESSES VALORES DE ACORDO COM O ITEM SELECIONADO NA LISTBOX
+    infoCaisFrame = LabelFrame(janelaNavio, borderwidth=1, relief="solid", bg = corBaseJanela, fg='white')
+    infoCaisFrame.place(x=345, y=60, width = 225, height = 350)
+
+    le1 = Label(infoCaisFrame, text="Teste: VALORVALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le1.pack(anchor="w", pady= (90, 5))
+
+    le2 = Label(infoCaisFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le2.pack(anchor="w", pady= 5)
+
+    le3 = Label(infoCaisFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le3.pack(anchor="w", pady= 5)
+
+    le4 = Label(infoCaisFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le4.pack(anchor="w", pady= 5)
+
+
+
+    #----------------------Inventario para equipar navios - POPULAR COM ITENS DO BANCO DE DADOS
+
+    textoFrota = Label(janelaNavio ,font=('', 25), bg=corBaseJanela, fg='white', text='Sua Frota')
+    textoFrota.place(x = 670, y = 10)
+
+    lojaFrota = Listbox(janelaNavio, bg = corBaseJanela, selectmode = 'single', relief = 'flat', font =('TkDefaultFont 11', 13), fg = 'white')
+    lojaFrota.place(x = 605, y = 60, width = 300, height = 350)
+
+    listaInv = [{'Nome': 'Laranja', 'Preco': '500 Dobrões'},
+               {'Nome': 'Espada', 'Preco': '5000 Dobrões' },]  # Lista de dicionários, cada item da lista é uma linha na loja - POPULAR COM ITENS DO BANCO DE DADOS
+
+    maxspace = len(max(listaInv, key=lambda x:len(x['Nome']))['Nome']) + 6
+    for i in range(len(listaInv)):
+        lojaFrota.insert(END, f"{listaInv[i]['Nome'].ljust(maxspace)}{listaInv[i]['Preco'].rjust(maxspace)}")
+
+
+    botaoEquipa = Button(janelaNavio, width=21, height=4, relief='flat', text = "Definir como\nprincipal") # COLOCAR COMANDO QUE ALTERA O NAVIO PRINCIPAL
+    botaoEquipa.config(bg = corBaseBotao)
+    botaoEquipa.place(x=675, y = 420)
+
+    #-----------------Descrição do navio selecionado na Frota
+    #ALTERAR ESSES VALORES DE ACORDO COM O ITEM SELECIONADO NA LISTBOX
+    infoInvFrame = LabelFrame(janelaNavio, borderwidth=1, relief="solid", bg = corBaseJanela, fg='white')
+    infoInvFrame.place(x=925, y=60, width = 225, height = 350)
+
+    le1 = Label(infoInvFrame, text="Teste: VALORVALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le1.pack(anchor="w", pady= (90, 5))
+
+    le2 = Label(infoInvFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le2.pack(anchor="w", pady= 5)
+
+    le3 = Label(infoInvFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le3.pack(anchor="w", pady= 5)
+
+    le4 = Label(infoInvFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le4.pack(anchor="w", pady= 5)
+
+
+#----------JANELA GUILDA----------#
+def criaGuilda():
+    janelaGuilda = Tk()
+    janelaGuilda.title('Guilda')
+    janelaGuilda.geometry('700x450')
+    janelaGuilda.resizable(width=False, height=False)
+    janelaGuilda.config(bg=corBaseJanela)
+
+    nomeGuilda = Label(janelaGuilda ,font=('', 25), bg=corBaseJanela, fg='white', text='NOME')#Text TEMPORARIO, MUDAR COM A DATABASE
+    nomeGuilda.place(x = 120, y = 10)
+
+    guildaMembros = Listbox(janelaGuilda, bg = corBaseJanela, selectmode = 'single', relief = 'flat', font =('TkDefaultFont 11', 13), fg = 'white')
+    guildaMembros.place(x = 25, y = 60, width = 300, height = 350)
+
+    #Popula a lista de membros da guilda
+    listaGuilda = [{'Nome': 'Du'},
+               {'Nome': 'Dudu'},
+               {'Nome': 'Edu'}]  # Lista de dicionários, cada item da lista é um membro da guilda - POPULAR COM ITENS DO BANCO DE DADOS
+
+    maxspace = len(max(listaGuilda, key=lambda x:len(x['Nome']))['Nome']) + 6
+    for i in range(len(listaGuilda)):
+        guildaMembros.insert(END, f"{listaGuilda[i]['Nome'].ljust(maxspace)}")
+
+    #Criação de Guilda
+    textoCriaG = Label(janelaGuilda ,font=('', 25), bg=corBaseJanela, fg='white', text='Criar Guilda')
+    textoCriaG.place(x = 375, y = 60)
+
+    entradaNovoNome = Entry(janelaGuilda, width=30, justify='left', relief='solid')
+    entradaNovoNome.place(x=375, y=110)
+
+    botaoCriaG = Button(janelaGuilda, width=21, height=4, relief='flat', text = "Criar\nGuilda") # COLOCAR COMANDO QUE CRIA UMA GUILDA COM O NOME NO BANCO DE DADOS
+    botaoCriaG.config(bg = corBaseBotao)
+    botaoCriaG.place(x=385, y = 150)
+
+    #Entrar em guilda
+    textoEntraG = Label(janelaGuilda ,font=('', 25), bg=corBaseJanela, fg='white', text='Entrar em Guilda')
+    textoEntraG.place(x = 375, y = 250)
+
+    entradanomeGuilda = Entry(janelaGuilda, width=30, justify='left', relief='solid')
+    entradanomeGuilda.place(x=375, y=300)
+
+    botaoEntraG = Button(janelaGuilda, width=21, height=4, relief='flat', text = "Entrar em\nGuilda") # COLOCAR COMANDO QUE ENTRA EM UMA GUILDA JÁ EXISTENTE
+    botaoEntraG.config(bg = corBaseBotao)
+    botaoEntraG.place(x=385, y = 340)
+
+#----------JANELA MAR-------------#
+def criaMar():
+    janelaMar = Toplevel(janelaHome)
+    janelaMar.title('Plunder')
+    janelaMar.geometry('1200x750')
+    janelaMar.resizable(width=False, height=False)
+    janelaMar.config(bg=corBaseJanela)
+
+    #Mapa do jogo
+    Mapa = ImageTk.PhotoImage(file = 'PlunderMapa.png')
+    plunderMapa = Label(janelaMar, image = Mapa)
+    plunderMapa.pack()
+    plunderMapa.config(bg = corBaseJanela)
+    plunderMapa.image_names = Mapa
+
+    #Inventário do personagem
+    textoInventario = Label(janelaMar, font=('', 25), bg=corBaseJanela, fg='white', text='Inventário')
+    textoInventario.place(x = 40, y = 50)   
+
+    botaoUsa = Button(janelaMar, width=21, height=4, relief='flat', text = "Usar") 
+    botaoUsa.place(x= 30, y = 570)
+
+    inventario = Listbox(janelaMar, bg = corBaseJanela, selectmode = 'single', relief = 'flat', font =('TkDefaultFont 11', 13), fg = 'white')
+    inventario.place(x = 10, y = 100, width = 200, height = 450)
+
+    #Popula a lista do Inventário
+    listaInventario = [{'Nome': 'Laranja'},
+               {'Nome': 'Martelo de Reparo'}]  # Lista de dicionários, cada item da lista é um item - POPULAR COM ITENS DO BANCO DE DADOS
+
+    maxspace = len(max(listaInventario, key=lambda x:len(x['Nome']))['Nome']) + 6
+    for i in range(len(listaInventario)):
+        inventario.insert(END, f"{listaInventario[i]['Nome'].ljust(maxspace)}")
+
+
+    #Coordenadas para viajar
+    textoCoords = Label(janelaMar, font=('', 20), bg=corBaseJanela, fg='white', text='Coordenadas')
+    textoCoords.place(x = 945, y = 305)
+
+    entradaCoords = Entry(janelaMar, width=30, justify='left', relief='solid')
+    entradaCoords.place(x=950, y=350)
+    entradaCoords.insert(END, '0, 0')
+
+    botaoCoords = Button(janelaMar, width=19, height=3, relief='flat', text = "Viajar")
+    botaoCoords.config(bg = corBaseBotao)
+    botaoCoords.place(x= 970, y = 395)
+
+    #Informações do personagem
+    textoChar = Label(janelaMar, font=('', 25), bg=corBaseJanela, fg='white', text='NOME')#Text TEMPORARIO, MUDAR COM A DATABASE
+    textoChar.place(x = 950, y = 50)
+
+    infoCharFrame = LabelFrame(janelaMar, borderwidth=1, relief="solid", bg = corBaseJanela, fg='white')
+    infoCharFrame.place(x=950, y=95, width = 235, height = 100)
+
+    le1 = Label(infoCharFrame, text="HP do personagem: XXX", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le1.pack(anchor="w", pady= (15, 5))
+
+    le2 = Label(infoCharFrame, text="HP do navio: XXX", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le2.pack(anchor="w", pady= 5)
+   
 
 #----------JANELA INICIAL-------------#
 corBaseJanela = '#434343' #Cinza escuro
