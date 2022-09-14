@@ -8,10 +8,10 @@ import datetime
 from PIL import ImageTk, Image
 
 
-#conn = mysql.connector.connect(user = "root", host = "localhost", passwd = "123456", database='mydb')
+#conn = mysql.connector.connect(user = "root", host = "localhost", passwd = "123456", database='plunderdb')
 
 #conector pro Jonas
-conn = mariadb.connect(user = "arkhrer", host = "localhost", password = "Af1732ab!", database='plunder')
+conn = mariadb.connect(user = "arkhrer", host = "localhost", password = "Af1732ab!", database='plunderdb')
 cursor = conn.cursor()
 
 #----------JANELA CADASTRO----------#
@@ -78,7 +78,7 @@ def cadastraCheck(userEnt, passwordEnt, emailEnt, pergEnt, segEnt):
     perguntaseg = pergEnt.get()
     respostaseg = segEnt.get()
 
-    pergquery = "SELECT `idPergunta de Segurança` from `pergunta de segurança` WHERE `pergunta de segurança`.`Pergunta` = %s"
+    pergquery = "SELECT `idpergunta de segurança` from `pergunta de segurança` WHERE `pergunta de segurança`.`pergunta` = %s"
 
     cursor.execute(pergquery,(perguntaseg,))
 
@@ -87,7 +87,7 @@ def cadastraCheck(userEnt, passwordEnt, emailEnt, pergEnt, segEnt):
     if len(oqueachou) > 0:
         perguntasegID = oqueachou[0][0]
     else:
-        perginquery = "INSERT INTO `pergunta de segurança`(`Pergunta`) VALUES (%s)"
+        perginquery = "INSERT INTO `pergunta de segurança`(`pergunta`) VALUES (%s)"
         cursor.execute(perginquery,(perguntaseg,))
         conn.commit()
         cursor.execute(pergquery,(perguntaseg,))
@@ -96,8 +96,8 @@ def cadastraCheck(userEnt, passwordEnt, emailEnt, pergEnt, segEnt):
 
     dataagora = datetime.datetime.now()
     datacria = f"{dataagora.year}-{dataagora.month}-{dataagora.day}"
-    create_account = ( """INSERT INTO `conta` (`Usuário`, `Senha`, `E-mail`,
-    `Data de Criação`, `Pergunta de Segurança_idPergunta de Segurança`, `Resposta de Segurança`) VALUES 
+    create_account = ( """INSERT INTO `conta` (`usuário`, `senha`, `e-mail`,
+    `data de criação`, `pergunta de segurança_idpergunta de segurança`, `resposta de segurança`) VALUES 
     (%s, %s, %s, %s, %s, %s)""")
 
     cursor.execute(create_account, (usuario, senha, email, datacria, perguntasegID, respostaseg))
@@ -106,9 +106,63 @@ def cadastraCheck(userEnt, passwordEnt, emailEnt, pergEnt, segEnt):
     try:
         if janelaCadastro.winfo_exists():
             janelaCadastro.destroy()
-
     except(NameError):
         pass
+
+    buscaID = "SELECT `idconta` FROM `conta` WHERE `usuário` = %s "
+    cursor.execute(buscaID, (usuario,))
+    oqueachou = cursor.fetchall()
+    conID = oqueachou[0][0]
+
+    janelaCriaPersonagem(conID)
+
+
+#------CRIACAO DE PERSONAGEM-----#
+
+def janelaCriaPersonagem(userID):
+    global janelaPersonagem
+
+    try:  
+        if janelaPersonagem.winfo_exists():
+            janelaPersonagem.destroy()
+    except(NameError):
+        pass
+
+    janelaPersonagem = Tk()
+    janelaPersonagem.title("Criação de Personagem")
+    janelaPersonagem.geometry('320x350')
+    janelaPersonagem.resizable(width=False, height=False)
+    janelaPersonagem.config(bg=corBaseJanela)
+
+    textoNome = Label(janelaPersonagem,font=('', 15), bg=corBaseJanela, fg='white', text="Nome do\nPersonagem:")
+    textoNome.place(x=20, y=115)
+    
+    entradaNome = Entry(janelaPersonagem, width=30, justify='left', relief='solid')
+    entradaNome.place(x=110, y=120)
+
+    botaoPersonagem = Button(janelaPersonagem, width=20, height=4, text = "Criar", command=lambda: criaPersonagem(userID, entradaNome))
+    botaoPersonagem.config(bg = corBaseBotao)
+    botaoPersonagem.place(x=80, y = 245)
+
+
+def criaPersonagem(ID, entnome):
+    nome = entnome.get()
+    dataagora = datetime.datetime.now()
+    datacria = f"{dataagora.year}-{dataagora.month}-{dataagora.day}"
+
+
+    criaperquery = ("""INSERT INTO `personagem`(`conta_idconta`, `nome`, `nível`, `experiência`, `dinheiro`, `data de criação`) 
+    VALUES (%s, %s, %s, %s, %s, %s)""")
+
+    cursor.execute(criaperquery, (ID, nome, 0, 0, 0.0, datacria))
+    conn.commit()
+
+    try:  
+        if janelaPersonagem.winfo_exists():
+            janelaPersonagem.destroy()
+    except(NameError):
+        pass
+    
 
 
 #----------JANELA LOGIN----------#
@@ -153,28 +207,26 @@ def loginCheck(userEnt, passwordEnt):
     username = userEnt.get()
     password = passwordEnt.get()
 
-    login = "SELECT `Usuário`, `Senha` from `conta` WHERE  `conta`.`Usuário`= %s AND `conta`.`Senha` = %s"
+    login = "SELECT * FROM `conta` WHERE `usuário`= %s AND `senha` = %s"
 
     cursor.execute(login, (username, password))
 
-    # oqueachou = cursor.fetchall()
+    oqueachou = cursor.fetchall()
 
-    if len(cursor.fetchall()) > 0:
+    if len(oqueachou) > 0:
         try:  
             if janelaLogin.winfo_exists():
                 janelaLogin.destroy()
 
         except(NameError):
             pass
-        criaHome(username)
+        criaHome(oqueachou[0][0])
     else:
         print("deuruim")
-
-    
     
 
 #----------JANELA HOME----------#
-def criaHome(user):
+def criaHome(idConta):
     global janelaHome
 
     #Se houver alguma outra janela aberta, fecha ela antes de abrir a Home
@@ -193,9 +245,9 @@ def criaHome(user):
     janelaHome.resizable(width=False, height=False)
     janelaHome.config(bg=corBaseJanela)
 
-    nomequery = "SELECT `Usuário` from `conta` WHERE  `conta`.`Usuário`= %s"
+    nomequery = "SELECT `nome` from `personagem` WHERE `conta_idconta`= %s"
 
-    cursor.execute(nomequery, (user,))
+    cursor.execute(nomequery, (idConta,))
     oqueachou = cursor.fetchall()
     
     textoNome = Label(janelaHome,font=('', 25), bg=corBaseJanela, fg='white', text=oqueachou[0][0])#Text TEMPORARIO, MUDAR COM A DATABASE
