@@ -1,68 +1,127 @@
 #from ssl import _PasswordType
 from tkinter import *
+from tkinter import ttk
 import mysql.connector
+import mariadb
+import datetime
 #from turtle import bgcolor
 from PIL import ImageTk, Image
 
+
 #conn = mysql.connector.connect(user = "root", host = "localhost", passwd = "123456", database='mydb')
-#cursor = conn.cursor()
+
+#conector pro Jonas
+conn = mariadb.connect(user = "arkhrer", host = "localhost", password = "Af1732ab!", database='plunder')
+cursor = conn.cursor()
 
 #----------JANELA CADASTRO----------#
 def criaCadastro():
     global janelaCadastro
+
+    try:
+        if janelaCadastro.winfo_exists():
+            janelaCadastro.destroy()
+
+    except(NameError):
+        pass
+
     janelaCadastro = Tk()
     janelaCadastro.title("Cadastro")
-    janelaCadastro.geometry('320x350')
+    janelaCadastro.geometry('500x500')
     janelaCadastro.resizable(width=False, height=False)
     janelaCadastro.config(bg=corBaseJanela)
     
     textoUsuario = Label(janelaCadastro,font=('', 15), bg=corBaseJanela, fg='white', text="Usuário:")
-    textoUsuario.place(x=20, y=100)
+    textoUsuario.place(x=20, y=90)
     
     entradaUsuario = Entry(janelaCadastro, width=30, justify='left', relief='solid')
-    entradaUsuario.place(x=110, y=105)
+    entradaUsuario.place(x=110, y=95)
 
     textoEmail = Label(janelaCadastro,font=('', 15), bg=corBaseJanela, fg='white', text="E-mail:")
-    textoEmail.place(x=25, y=150)
+    textoEmail.place(x=20, y=128)
 
     entradaEmail = Entry(janelaCadastro, width=30, justify='left', relief='solid')
-    entradaEmail.place(x=110, y=155)
+    entradaEmail.place(x=110, y=133)
 
     textoSenha = Label(janelaCadastro,font=('', 15),bg=corBaseJanela, fg='white', text="Senha:")
-    textoSenha.place(x=25, y=200)
+    textoSenha.place(x=20, y=166)
 
     entradaSenha = Entry(janelaCadastro, width=30, justify='left', relief='solid')
-    entradaSenha.place(x=110, y=205)
+    entradaSenha.place(x=110, y=171)
+
+    textoPergunta = Label(janelaCadastro,font=('', 10),bg=corBaseJanela, fg='white', text="Pergunta de\n Segurança:")
+    textoPergunta.place(x=20, y=204)
+
+    entradaPergunta = ttk.Combobox(janelaCadastro, width=30, values = ["Pet", "Bairro", "Escola", "Nome do meio"])
+    entradaPergunta.place(x = 110, y = 209)
+
+
+    textoSeguranca = Label(janelaCadastro,font=('', 10),bg=corBaseJanela, fg='white', text="Resposta de\n Segurança:")
+    textoSeguranca.place(x=20, y=242)
+
+    entradaSeguranca = Entry(janelaCadastro, width=30, justify='left', relief='solid')
+    entradaSeguranca.place(x=110, y=247)
 
     textoCadastroC = Label(janelaCadastro, font=('', 35), bd=0, bg=corBaseJanela, fg='white', text="CADASTRO")
     textoCadastroC.place(x=30, y=20)
 
-    botaoCadastra = Button(janelaCadastro, width=20, height=4, text = "Cadastrar", command = lambda: cadastraCheck(entradaUsuario, entradaSenha, entradaEmail))
+    botaoCadastra = Button(janelaCadastro, width=20, height=4, text = "Cadastrar", command = lambda: cadastraCheck(entradaUsuario, entradaSenha, entradaEmail, entradaPergunta, entradaSeguranca))
     botaoCadastra.config(bg = corBaseBotao)
-    botaoCadastra.place(x=80, y = 245)
+    botaoCadastra.place(x=80, y = 300)
 
 #Ações a serem executadas quando o botão for pressionado
-def cadastraCheck(userEnt, passwordEnt, emailEnt):
+def cadastraCheck(userEnt, passwordEnt, emailEnt, pergEnt, segEnt):
+
     usuario = userEnt.get()
     email = emailEnt.get()
     senha = passwordEnt.get()
-    idconta = 30
-    datacria = "2001-01-01"
-    perguntaseg = 1
-    respostaseg = "dog"
-    #create_account = ( """INSERT INTO `Conta` (`Usuário`, `idConta`, `Senha`, `E-mail`,
-    #`Data de Criação`, `Pergunta de Segurança_idPergunta de Segurança`, `Resposta de Segurança`) VALUES 
-   #(%s, %s, %s, %s, %s, %s, %s)""")
+    perguntaseg = pergEnt.get()
+    respostaseg = segEnt.get()
 
-    #cursor.execute(create_account, (usuario, idconta, senha, email, datacria, perguntaseg, respostaseg))
-    #conn.commit()
-    #print("deucerto")
+    pergquery = "SELECT `idPergunta de Segurança` from `pergunta de segurança` WHERE `pergunta de segurança`.`Pergunta` = %s"
 
+    cursor.execute(pergquery,(perguntaseg,))
+
+    oqueachou = cursor.fetchall()
+
+    if len(oqueachou) > 0:
+        perguntasegID = oqueachou[0][0]
+    else:
+        perginquery = "INSERT INTO `pergunta de segurança`(`Pergunta`) VALUES (%s)"
+        cursor.execute(perginquery,(perguntaseg,))
+        conn.commit()
+        cursor.execute(pergquery,(perguntaseg,))
+        oqueachou = cursor.fetchall()
+        perguntasegID = oqueachou[0][0]
+
+    dataagora = datetime.datetime.now()
+    datacria = f"{dataagora.year}-{dataagora.month}-{dataagora.day}"
+    create_account = ( """INSERT INTO `conta` (`Usuário`, `Senha`, `E-mail`,
+    `Data de Criação`, `Pergunta de Segurança_idPergunta de Segurança`, `Resposta de Segurança`) VALUES 
+    (%s, %s, %s, %s, %s, %s)""")
+
+    cursor.execute(create_account, (usuario, senha, email, datacria, perguntasegID, respostaseg))
+    conn.commit()
+
+    try:
+        if janelaCadastro.winfo_exists():
+            janelaCadastro.destroy()
+
+    except(NameError):
+        pass
 
 
 #----------JANELA LOGIN----------#
 def criaLogin():
     global janelaLogin
+
+    try:  
+        if janelaLogin.winfo_exists():
+            janelaLogin.destroy()
+
+    except(NameError):
+        pass
+
     janelaLogin = Tk()
     janelaLogin.title("Login")
     janelaLogin.geometry('320x350')
@@ -94,16 +153,24 @@ def loginCheck(userEnt, passwordEnt):
     username = userEnt.get()
     password = passwordEnt.get()
 
-    #login = "SELECT `Usuário`, `Senha` from `Conta` WHERE  `Conta`.`Usuário`= %s AND `Conta`.`Senha` = %s"
+    login = "SELECT `Usuário`, `Senha` from `conta` WHERE  `conta`.`Usuário`= %s AND `conta`.`Senha` = %s"
 
-    #cursor.execute(login, (username, password))
+    cursor.execute(login, (username, password))
 
-    #oqueachou = cursor.fetchall()
+    # oqueachou = cursor.fetchall()
 
-    #if len(cursor.fetchall()) > 0:
-    criaHome(username)
-    #else:
-        #print("deuruim")
+    if len(cursor.fetchall()) > 0:
+        try:  
+            if janelaLogin.winfo_exists():
+                janelaLogin.destroy()
+
+        except(NameError):
+            pass
+        criaHome(username)
+    else:
+        print("deuruim")
+
+    
     
 
 #----------JANELA HOME----------#
@@ -111,37 +178,27 @@ def criaHome(user):
     global janelaHome
 
     #Se houver alguma outra janela aberta, fecha ela antes de abrir a Home
-    try:
-        if janelaCadastro.winfo_exists():
-            janelaCadastro.destroy()
-
-    except(NameError):
-        pass
 
     try:
                 
-        if janelaLogin.winfo_exists():
-            janelaLogin.destroy()
+        if inicial.winfo_exists():
+            inicial.destroy()
 
     except(NameError):
         pass
 
-    
-
-    inicial.destroy()
     janelaHome = Tk()
     janelaHome.title("Plunder")
     janelaHome.geometry('700x450')
     janelaHome.resizable(width=False, height=False)
     janelaHome.config(bg=corBaseJanela)
 
-    #nomequery = "SELECT `Usuário` from `Conta` WHERE  `Conta`.`Usuário`= %s"
+    nomequery = "SELECT `Usuário` from `conta` WHERE  `conta`.`Usuário`= %s"
 
-   #cursor.execute(nomequery, (user,))
-   #oqueachou = cursor.fetchall()
-   #print(oqueachou)
+    cursor.execute(nomequery, (user,))
+    oqueachou = cursor.fetchall()
     
-    textoNome = Label(janelaHome,font=('', 25), bg=corBaseJanela, fg='white', text='oqueachou[0][0]')#Text TEMPORARIO, MUDAR COM A DATABASE
+    textoNome = Label(janelaHome,font=('', 25), bg=corBaseJanela, fg='white', text=oqueachou[0][0])#Text TEMPORARIO, MUDAR COM A DATABASE
     textoNome.place(x=285, y=15)
 
     #Frame que segura as informações no centro da página
@@ -469,33 +526,36 @@ def criaMar():
 corBaseJanela = '#434343' #Cinza escuro
 corBaseBotao = '#B9a82b' #Cinza
 
-inicial = Tk()
+def pagInicial():
 
-inicial.title('Plunder')
-inicial.geometry('700x550')
-inicial.resizable(width=False, height=False)
-inicial.config(bg=corBaseJanela)
+    global inicial
+    inicial = Tk()
 
-logo = ImageTk.PhotoImage(image = Image.open("Plunderlogo.png"))
-plunderLogo = Label(image = logo)
-plunderLogo.place(x=350, y =200, anchor=CENTER)
-plunderLogo.config(bg = corBaseJanela)
+    inicial.title('Plunder')
+    inicial.geometry('700x550')
+    inicial.resizable(width=False, height=False)
+    inicial.config(bg=corBaseJanela)
 
-#Abre a janela de cadastro
-botaoCadastro = Button(inicial, width=20, height=4, relief='flat', text = "Cadastro", command=criaCadastro)
-botaoCadastro.config(bg = corBaseBotao)
-botaoCadastro.place(x=160, y = 350)
+    logo = ImageTk.PhotoImage(image = Image.open(r'plundergui/Plunderlogo.png'))
+    plunderLogo = Label(image = logo)
+    plunderLogo.place(x=350, y =200, anchor=CENTER)
+    plunderLogo.config(bg = corBaseJanela)
 
-#Abre a janela de login
-botaoLogin = Button(inicial, width=20, height=4, relief='flat', text = "Login", command= criaLogin)
-botaoLogin.config(bg = corBaseBotao)
-botaoLogin.place(x=400, y = 350)
+    #Abre a janela de cadastro
+    botaoCadastro = Button(inicial, width=20, height=4, relief='flat', text = "Cadastro", command=criaCadastro)
+    botaoCadastro.config(bg = corBaseBotao)
+    botaoCadastro.place(x=160, y = 350)
+
+    #Abre a janela de login
+    botaoLogin = Button(inicial, width=20, height=4, relief='flat', text = "Login", command= criaLogin)
+    botaoLogin.config(bg = corBaseBotao)
+    botaoLogin.place(x=400, y = 350)
+    inicial.mainloop()
+
+
+pagInicial()
 
 
 
 
-
-
-
-inicial.mainloop()
 #conn.close()
