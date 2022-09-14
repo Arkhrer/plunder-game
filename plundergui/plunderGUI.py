@@ -153,8 +153,33 @@ def criaPersonagem(ID, entnome):
 
     criaperquery = ("""INSERT INTO `personagem`(`conta_idconta`, `nome`, `nível`, `experiência`, `dinheiro`, `data de criação`) 
     VALUES (%s, %s, %s, %s, %s, %s)""")
+    criaatributosquery = ("""INSERT INTO `atributos`(`personagem_idpersonagem`, `ataque`, `defesa`, `destreza`, `sorte`, `carisma`, `velocidade`)
+    VALUES (%s, %s, %s, %s, %s, %s, %s)""")
+    criainventarioquery = ("""INSERT INTO `inventário`(`personagem_idpersonagem`, `peso total`)
+    VALUES (%s, %s)""")
+    criaequipadoquery = ("""INSERT INTO `equipado`(`personagem_idpersonagem`)
+    VALUES (%s)""")
+    criatripulquery = ("""INSERT INTO `tripulação`(`personagem_idpersonagem`, `número`, `nível`, `experiência`)
+    VALUES (%s, %s, %s, %s)""")
 
-    cursor.execute(criaperquery, (ID, nome, 0, 0, 0.0, datacria))
+    cursor.execute(criaperquery, (ID, nome, 1, 0, 0, datacria))
+    conn.commit()
+
+    buscaID = "SELECT `idpersonagem` FROM `personagem` WHERE `conta_idconta` = %s"
+    cursor.execute(buscaID, (ID,))
+    oqueachou = cursor.fetchall()
+    IDper = oqueachou[0][0]
+
+    cursor.execute(criaatributosquery, (IDper, 1, 1, 1, 1, 1, 1))
+    conn.commit()
+
+    cursor.execute(criainventarioquery, (IDper, 350))
+    conn.commit()
+
+    cursor.execute(criaequipadoquery, (IDper,))
+    conn.commit()
+
+    cursor.execute(criatripulquery, (IDper, 0, 1, 0))
     conn.commit()
 
     try:  
