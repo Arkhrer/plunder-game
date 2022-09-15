@@ -2,18 +2,20 @@
 from tkinter import *
 from tkinter import ttk
 import mysql.connector
-import mariadb
+#import mariadb
 import datetime
 import time
+import numpy as np
+import random
 #from turtle import bgcolor
 from PIL import ImageTk, Image
 
 #Conector pra Windows
-#conn = mysql.connector.connect(user = "root", host = "localhost", passwd = "123456", database='plunderdb')
+conn = mysql.connector.connect(user = "root", host = "localhost", passwd = "123456", database='plunderdb')
 #cursor = conn.cursor()
 
 #conector pro Jonas / comentar o mariadb se não for o Jonas
-conn = mariadb.connect(user = "arkhrer", host = "localhost", password = "Af1732ab!", database='plunderdb')
+#conn = mariadb.connect(user = "arkhrer", host = "localhost", password = "Af1732ab!", database='plunderdb')
 cursor = conn.cursor()
 
 #----------JANELA CADASTRO----------#
@@ -364,7 +366,7 @@ def criaLoja(idpersonagem):
 
     maxspace = len(max(listaLoja, key=lambda x:len(x['Nome']))['Nome']) + 6
     for i in range(len(listaLoja)):
-        lojaLoja.insert(END, f"{listaLoja[i]['Nome'].ljust(maxspace)}{listaLoja[i]['Preco'].rjust(maxspace)}")
+        lojaLoja.insert(END, f"{listaLoja[i]['Nome'].ljust(maxspace)}{listaLoja[i]['Preco'].ljust(maxspace)}")
 
     #Botão de comprar itens
     botaoCompra = Button(janelaLoja, width=21, height=4, relief='flat', text = "Comprar") # COLOCAR COMANDO QUE EXECUTA A COMPRA DE ACORDO COM O PREÇO
@@ -436,8 +438,7 @@ def criaTripulacao(idpersonagem):
 
     if tripnum >= 20 or dinheiro < 100:
         botaoContrata["state"] = DISABLED
-        
-        
+                
 
 def contrataTrip(oqueachou, dinheiro, botaoContrata, idpersonagem, textoMembros):
     numeroAtual = oqueachou[0][0]
@@ -456,11 +457,6 @@ def contrataTrip(oqueachou, dinheiro, botaoContrata, idpersonagem, textoMembros)
         cursor.execute(tripQuery, (idpersonagem,))
         numeroTrip = cursor.fetchall()
         textoMembros.config(text = f"{numeroTrip[0][0]} Membros")
-
-        
-
-        
-
 
 #----------JANELA NAVIO----------#
 def criaNavio(idpersonagem):
@@ -595,6 +591,7 @@ def criaGuilda(idpersonagem):
 
 #----------JANELA MAR-------------#
 def criaMar(idpersonagem):
+    arrayMar = criaMatrizMar()
     janelaMar = Toplevel(janelaHome)
     janelaMar.title('Plunder')
     janelaMar.geometry('1200x750')
@@ -635,7 +632,7 @@ def criaMar(idpersonagem):
     entradaCoords.place(x=950, y=350)
     entradaCoords.insert(END, '0, 0')
 
-    botaoCoords = Button(janelaMar, width=19, height=3, relief='flat', text = "Viajar")
+    botaoCoords = Button(janelaMar, width=19, height=3, relief='flat', text = "Viajar", command = lambda: viajaCoordenadas(entradaCoords, arrayMar, janelaMar))
     botaoCoords.config(bg = corBaseBotao)
     botaoCoords.place(x= 970, y = 395)
 
@@ -651,6 +648,86 @@ def criaMar(idpersonagem):
 
     le2 = Label(infoCharFrame, text="HP do navio: XXX", bg=corBaseJanela, fg= 'white', font=('', 15))
     le2.pack(anchor="w", pady= 5)
+
+def criaMatrizMar():
+    arrayMar = np.zeros((21, 21), dtype=int)
+    arrayMar[1:7,13:21] = 1
+    arrayMar[7,2] = 1
+    arrayMar[17,17] = 1
+    arrayMar[8,2] = 1
+    arrayMar[7,4] = 1
+    arrayMar[7,1] = 1
+    arrayMar[17,16] = 1
+    arrayMar[17,18] = 1
+    arrayMar[15,7] = 1
+    arrayMar[14,17] = 1
+    arrayMar[18,14] = 1
+    arrayMar[18,19] = 1
+    return arrayMar
+
+def viajaCoordenadas(entradaCoords, arrayMar, janelaMar):
+    x, y = map(int, entradaCoords.get().split(','))
+    rand = random.randint(0, 15)
+
+    #Se descer em terra
+    if arrayMar[x][y] == 1:
+
+        #Se o número aleatório for menor que 7, inicia combate.
+        if rand <= 7:
+            janelaEvento = Toplevel(janelaMar)
+            janelaEvento.title('Combate!')
+            janelaEvento.geometry('300x300')
+            janelaEvento.resizable(width=False, height=False)
+            janelaEvento.config(bg=corBaseJanela)
+
+            le1 = Label(janelaEvento, text=f"Você ancora o navio e desce em terra firme. Se depara com um inimigo que possui x y z e é derrotado!", bg=corBaseJanela, fg= 'white', font=('', 15), justify='center', wraplength=250)
+            le1.pack(anchor="n", pady=(40, 10))
+
+        #Se o número aleatório for entre 8 e 9, acha tesouro.
+        elif rand > 7 and rand <= 9:
+            janelaEvento = Toplevel(janelaMar)
+            janelaEvento.title('Tesouro!')
+            janelaEvento.geometry('300x300')
+            janelaEvento.resizable(width=False, height=False)
+            janelaEvento.config(bg=corBaseJanela)
+        
+        #Se o número aleatório for entre 10 e 15, nada acontece.
+        else:
+            janelaEvento = Toplevel(janelaMar)
+            janelaEvento.title('Nada!')
+            janelaEvento.geometry('300x300')
+            janelaEvento.resizable(width=False, height=False)
+            janelaEvento.config(bg=corBaseJanela)
+            le1 = Label(janelaEvento, text=f"Nada de notável acontece.", bg=corBaseJanela, fg= 'white', font=('', 30), justify='center', wraplength=250)
+            le1.pack(anchor="n", pady=(70, 10))
+
+        print('TERRA')
+
+    #Se ficar no mar:
+    else:
+
+        #Se o número aleatório for menor ou igual a 7, inicia combate.
+        if rand <= 7:
+            janelaEvento = Toplevel(janelaMar)
+            janelaEvento.title('Combate!')
+            janelaEvento.geometry('300x300')
+            janelaEvento.resizable(width=False, height=False)
+            janelaEvento.config(bg=corBaseJanela)
+
+            
+            le1 = Label(janelaEvento, text=f"Você avista um navio se aproximando no horizonte e se prepara para o combate.\n\n o Navio inimigo possui x y z. Você é derrotado!", bg=corBaseJanela, fg= 'white', font=('', 15), justify='center', wraplength=250)
+            le1.pack(anchor="n", pady=(40, 10))
+        
+        #Se o número aleatório for entre 8 e 15, nada acontece.
+        else:
+            janelaEvento = Toplevel(janelaMar)
+            janelaEvento.title('Nada!')
+            janelaEvento.geometry('300x300')
+            janelaEvento.resizable(width=False, height=False)
+            janelaEvento.config(bg=corBaseJanela)
+            le1 = Label(janelaEvento, text=f"Nada de notável acontece.", bg=corBaseJanela, fg= 'white', font=('', 30), justify='center', wraplength=250)
+            le1.pack(anchor="n", pady=(70, 10))
+        print('MAR')
 
 
 #----------JANELA INICIAL-------------#
