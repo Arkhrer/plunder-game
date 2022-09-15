@@ -439,7 +439,7 @@ def criaTripulacao(idpersonagem):
     if tripnum >= 20 or dinheiro < 100:
         botaoContrata["state"] = DISABLED
                 
-
+#----------CONTRATA TRIPULAÇÃO--------#
 def contrataTrip(oqueachou, dinheiro, botaoContrata, idpersonagem, textoMembros):
     numeroAtual = oqueachou[0][0]
     if numeroAtual >= 20 or dinheiro < 100:
@@ -548,24 +548,48 @@ def criaNavio(idpersonagem):
 def criaGuilda(idpersonagem):
     janelaGuilda = Tk()
     janelaGuilda.title('Guilda')
-    janelaGuilda.geometry('700x450')
+    janelaGuilda.geometry('850x450')
     janelaGuilda.resizable(width=False, height=False)
     janelaGuilda.config(bg=corBaseJanela)
 
-    nomeGuilda = Label(janelaGuilda ,font=('', 25), bg=corBaseJanela, fg='white', text='NOME')#Text TEMPORARIO, MUDAR COM A DATABASE
-    nomeGuilda.place(x = 120, y = 10)
+    guildaQuery = "SELECT `guilda_idguilda`  from `personagem` WHERE `idpersonagem`= %s"
+    cursor.execute(guildaQuery, (idpersonagem,))
+    guildaAtual = cursor.fetchall()
+
+    guildaQuery2 = "SELECT `nome`  from `guilda` WHERE `idguilda`= %s"
+    cursor.execute(guildaQuery2, (guildaAtual[0][0],))
+    nomeGuildaAtual = cursor.fetchall()
 
     guildaMembros = Listbox(janelaGuilda, bg = corBaseJanela, selectmode = 'single', relief = 'flat', font =('TkDefaultFont 11', 13), fg = 'white')
     guildaMembros.place(x = 25, y = 60, width = 300, height = 350)
 
-    #Popula a lista de membros da guilda
-    listaGuilda = [{'Nome': 'Du'},
-               {'Nome': 'Dudu'},
-               {'Nome': 'Edu'}]  # Lista de dicionários, cada item da lista é um membro da guilda - POPULAR COM ITENS DO BANCO DE DADOS
+    if len(nomeGuildaAtual) != 0:
+        nomeGuilda = Label(janelaGuilda ,font=('', 25), bg=corBaseJanela, fg='white', text=f'{nomeGuildaAtual[0][0]}')#Text TEMPORARIO, MUDAR COM A DATABASE
+        nomeGuilda.place(x = 120, y = 10)
 
-    maxspace = len(max(listaGuilda, key=lambda x:len(x['Nome']))['Nome']) + 6
-    for i in range(len(listaGuilda)):
-        guildaMembros.insert(END, f"{listaGuilda[i]['Nome'].ljust(maxspace)}")
+        membrosquery = "SELECT `nome` FROM `personagem` WHERE guilda_idguilda = %s"
+        cursor.execute(membrosquery, (guildaAtual[0]))
+        oqueachou = cursor.fetchall()
+
+        tam = len(oqueachou)
+
+        listaGuilda = []
+
+        for i in range(tam):
+            listaGuilda = listaGuilda + [{'Nome': oqueachou[i][0]}]
+
+
+        maxspace = len(max(listaGuilda, key=lambda x:len(x['Nome']))['Nome']) + 6
+        for i in range(len(listaGuilda)):
+            guildaMembros.insert(END, f"{listaGuilda[i]['Nome'].ljust(maxspace)}")
+
+
+    else:
+        nomeGuilda = Label(janelaGuilda ,font=('', 25), bg=corBaseJanela, fg='white', text='')#Text TEMPORARIO, MUDAR COM A DATABASE
+        nomeGuilda.place(x = 120, y = 10)
+
+
+
 
     #Criação de Guilda
     textoCriaG = Label(janelaGuilda ,font=('', 25), bg=corBaseJanela, fg='white', text='Criar Guilda')
@@ -574,20 +598,191 @@ def criaGuilda(idpersonagem):
     entradaNovoNome = Entry(janelaGuilda, width=30, justify='left', relief='solid')
     entradaNovoNome.place(x=375, y=110)
 
-    botaoCriaG = Button(janelaGuilda, width=21, height=4, relief='flat', text = "Criar\nGuilda") # COLOCAR COMANDO QUE CRIA UMA GUILDA COM O NOME NO BANCO DE DADOS
+    botaoCriaG = Button(janelaGuilda, width=21, height=4, relief='flat', text = "Criar\nGuilda", command = lambda: criaNovaGuilda(idpersonagem, entradaNovoNome, janelaGuilda, botaoCriaG, botaoEntraG, botaoSaiG, botaoDeletaG, nomeGuilda, guildaMembros)) # COLOCAR COMANDO QUE CRIA UMA GUILDA COM O NOME NO BANCO DE DADOS
     botaoCriaG.config(bg = corBaseBotao)
     botaoCriaG.place(x=385, y = 150)
 
     #Entrar em guilda
     textoEntraG = Label(janelaGuilda ,font=('', 25), bg=corBaseJanela, fg='white', text='Entrar em Guilda')
-    textoEntraG.place(x = 375, y = 250)
+    textoEntraG.place(x = 350, y = 250)
 
     entradanomeGuilda = Entry(janelaGuilda, width=30, justify='left', relief='solid')
     entradanomeGuilda.place(x=375, y=300)
 
-    botaoEntraG = Button(janelaGuilda, width=21, height=4, relief='flat', text = "Entrar em\nGuilda") # COLOCAR COMANDO QUE ENTRA EM UMA GUILDA JÁ EXISTENTE
+    botaoEntraG = Button(janelaGuilda, width=21, height=4, relief='flat', text = "Entrar em\nGuilda", command = lambda: entraGuilda(idpersonagem, entradanomeGuilda, janelaGuilda, botaoCriaG, botaoEntraG, botaoSaiG, botaoDeletaG, nomeGuilda, guildaMembros)) # COLOCAR COMANDO QUE ENTRA EM UMA GUILDA JÁ EXISTENTE
     botaoEntraG.config(bg = corBaseBotao)
     botaoEntraG.place(x=385, y = 340)
+
+    #Sair da guilda
+    botaoSaiG = Button(janelaGuilda, width=21, height=4, relief='flat', text = "Sair da Guilda", command = lambda: saiGuilda(idpersonagem, nomeGuilda, botaoCriaG, botaoEntraG, botaoSaiG, botaoDeletaG, guildaMembros)) # COLOCAR COMANDO QUE SAI DA GUILDA ATUAL
+    botaoSaiG.config(bg = corBaseBotao)
+    botaoSaiG.place(x=650, y = 150)
+
+    #Deletar Guilda
+    botaoDeletaG = Button(janelaGuilda, width=21, height=4, relief='flat', text = "Excluir Guilda", command = lambda: deletaGuilda(idpersonagem, nomeGuilda, botaoCriaG, botaoEntraG, botaoSaiG, botaoDeletaG, guildaMembros)) # COLOCAR COMANDO QUE SAI DA GUILDA ATUAL
+    botaoDeletaG.config(bg = corBaseBotao)
+    botaoDeletaG.place(x=650, y = 340)
+
+    if guildaAtual[0][0] != None:
+        botaoCriaG["state"] = DISABLED
+        botaoEntraG["state"] = DISABLED
+
+#---------Cria Guilda----------#    
+def criaNovaGuilda(idpersonagem, entradaNovoNome, janelaGuilda, botaoCriaG, botaoEntraG, botaoSaiG, botaoDeletaG, nomeGuilda, guildaMembros):
+
+    nomeG = entradaNovoNome.get()
+
+    #Se já existir guilda com este nome, levanta um erro
+    checaGuilda = "SELECT `idGuilda` from `guilda` WHERE `nome`= %s"
+    cursor.execute(checaGuilda, (nomeG,))
+    idExisteG = cursor.fetchall()
+
+    if len(idExisteG) != 0:
+        guildaExiste = Toplevel(janelaGuilda)
+        guildaExiste.title('Aviso!')
+        guildaExiste.geometry('300x300')
+        guildaExiste.resizable(width=False, height=False)
+        guildaExiste.config(bg=corBaseJanela)
+        textoEntraG = Label(guildaExiste, font=('', 25), bg=corBaseJanela, fg='white', text='Já existe uma guilda com este nome!', justify='center', wraplength=250)
+        textoEntraG.pack(anchor = 'n', pady = (40))
+
+    #Se não houver outra guilda com este nome, cria a guilda e adiciona o personagem nela.
+    else:
+        criaGuild = "INSERT into guilda (nome, nível, experiência, sigla) VALUES(%s, 1, 0, %s)"
+        siglaG = nomeG[0:3]
+        cursor.execute(criaGuild, (nomeG, siglaG))
+        conn.commit()
+
+        retornaIdGuild = "SELECT idGuilda from guilda where nome = %s"
+        cursor.execute(retornaIdGuild, (nomeG,))
+        idGuilda = cursor.fetchall()
+        print(idGuilda)
+
+        entraGuild = "Update personagem set guilda_idguilda = %s where idpersonagem = %s"
+        cursor.execute(entraGuild, (idGuilda[0][0], idpersonagem))
+        conn.commit()
+
+        #Desativa os botões de criar e entrar em guilda e atualiza os dados da guilda na janela
+        nomeGuilda.config(text = f'{nomeG}')
+        botaoCriaG["state"] = DISABLED
+        botaoEntraG["state"] = DISABLED
+        botaoSaiG["state"] = NORMAL
+        botaoDeletaG["state"] = NORMAL
+
+        ################################ ATUALIZA LISTA DE MEMBROS ###############################    
+        guildaMembros.delete(0, END)
+
+        membrosquery = "SELECT `nome` FROM `personagem` WHERE guilda_idguilda = %s"
+        cursor.execute(membrosquery, (idGuilda[0]))
+        oqueachou = cursor.fetchall()
+
+        tam = len(oqueachou)
+
+        listaGuilda = []
+
+        for i in range(tam):
+            listaGuilda = listaGuilda + [{'Nome': oqueachou[i][0]}]
+
+        maxspace = len(max(listaGuilda, key=lambda x:len(x['Nome']))['Nome']) + 6
+        for i in range(len(listaGuilda)):
+            guildaMembros.insert(END, f"{listaGuilda[i]['Nome'].ljust(maxspace)}")
+        #############################################################################################
+
+#-------Entra em Guilda Existente----------#
+def entraGuilda(idpersonagem, entradanomeGuilda, janelaGuilda, botaoCriaG, botaoEntraG, botaoSaiG, botaoDeletaG, nomeGuilda, guildaMembros):
+
+    nomeG = entradanomeGuilda.get()
+    checaGuilda = "SELECT `idGuilda` from `guilda` WHERE `nome`= %s"
+    cursor.execute(checaGuilda, (nomeG,))
+    idExisteG = cursor.fetchall()
+
+    #Levanta erro se a guilda não existir
+    if len(idExisteG) == 0:
+        guildaExiste = Toplevel(janelaGuilda)
+        guildaExiste.title('Aviso!')
+        guildaExiste.geometry('300x300')
+        guildaExiste.resizable(width=False, height=False)
+        guildaExiste.config(bg=corBaseJanela)
+        textoEntraG = Label(guildaExiste, font=('', 25), bg=corBaseJanela, fg='white', text='Esta guilda não existe!', justify='center', wraplength=250)
+        textoEntraG.pack(anchor = 'n', pady = (40))
+
+    #Coloca o personagem na guilda se ela existir    
+    else:
+        entraGuild = "Update personagem set guilda_idguilda = %s where idpersonagem = %s"
+        cursor.execute(entraGuild, (idExisteG[0][0], idpersonagem))
+        conn.commit()
+
+        #Desativa os botões de criar e entrar em guilda e atualiza os dados da guilda na janela
+        nomeGuilda.config(text = f'{nomeG}')
+        botaoCriaG["state"] = DISABLED
+        botaoEntraG["state"] = DISABLED
+        botaoSaiG["state"] = NORMAL
+        botaoDeletaG["state"] = NORMAL
+
+        ################################ ATUALIZA LISTA DE MEMBROS ###############################    
+        guildaMembros.delete(0, END)
+
+        membrosquery = "SELECT `nome` FROM `personagem` WHERE guilda_idguilda = %s"
+        cursor.execute(membrosquery, (idExisteG[0]))
+        oqueachou = cursor.fetchall()
+
+        tam = len(oqueachou)
+
+        listaGuilda = []
+
+        for i in range(tam):
+            listaGuilda = listaGuilda + [{'Nome': oqueachou[i][0]}]
+
+        maxspace = len(max(listaGuilda, key=lambda x:len(x['Nome']))['Nome']) + 6
+        for i in range(len(listaGuilda)):
+            guildaMembros.insert(END, f"{listaGuilda[i]['Nome'].ljust(maxspace)}")
+        #############################################################################################
+
+#--------Sai da guilda atual---------#
+def saiGuilda(idpersonagem, nomeGuilda, botaoCriaG, botaoEntraG, botaoSaiG, botaoDeletaG, guildaMembros):
+
+    saidaGuilda = "UPDATE personagem set guilda_idguilda = NULL where idpersonagem = %s"
+    cursor.execute(saidaGuilda, (idpersonagem,))
+    conn.commit()
+
+    #Desativa os botões de criar e entrar em guilda e atualiza os dados da guilda na janela
+    nomeGuilda.config(text = '')
+    botaoCriaG["state"] = NORMAL
+    botaoEntraG["state"] = NORMAL
+    botaoSaiG["state"] = DISABLED
+    botaoDeletaG["state"] = DISABLED
+
+    ################################ ATUALIZA LISTA DE MEMBROS ###############################    
+    guildaMembros.delete(0, END)
+    #############################################################################################
+
+#-----------Deleta guilda atual---------#
+def deletaGuilda(idpersonagem, nomeGuilda, botaoCriaG, botaoEntraG, botaoSaiG, botaoDeletaG, guildaMembros):
+
+    guildaAtual = "SELECT guilda_idguilda from personagem where idpersonagem = %s"
+    cursor.execute(guildaAtual, (idpersonagem,))
+    idGuilda = cursor.fetchall()
+
+    #Tira todos os membros da guilda atual
+    tiraMembros = "UPDATE personagem set guilda_idguilda = NULL where guilda_idguilda = %s"
+    cursor.execute(tiraMembros, (idGuilda[0][0],))
+    conn.commit()
+
+    deletaGuilda = "DELETE from guilda where idguilda = %s"
+    cursor.execute(deletaGuilda, (idGuilda[0][0],))
+    conn.commit()
+
+    #Desativa os botões de criar e entrar em guilda e atualiza os dados da guilda na janela
+    nomeGuilda.config(text = '')
+    botaoCriaG["state"] = NORMAL
+    botaoEntraG["state"] = NORMAL
+    botaoSaiG["state"] = DISABLED
+    botaoDeletaG["state"] = DISABLED
+
+    ################################ ATUALIZA LISTA DE MEMBROS ###############################    
+    guildaMembros.delete(0, END)
+    #############################################################################################
+    
 
 #----------JANELA MAR-------------#
 def criaMar(idpersonagem):
