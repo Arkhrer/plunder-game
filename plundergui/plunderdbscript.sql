@@ -168,9 +168,9 @@ drop table if exists `plunderdb`.`tripulação` ;
 
 create table if not exists `plunderdb`.`tripulação` (
   `personagem_idpersonagem` int not null,
-  `numero` varchar(45) not null,
-  `nivel` varchar(45) not null,
-  `experiência` varchar(45) not null,
+  `número` int not null,
+  `nível` int not null,
+  `experiência` int not null,
   primary key (`personagem_idpersonagem`),
   constraint `fk_tripulação_personagem1`
     foreign key (`personagem_idpersonagem`)
@@ -469,12 +469,12 @@ drop table if exists `plunderdb`.`equipado` ;
 
 create table if not exists `plunderdb`.`equipado` (
   `personagem_idpersonagem` int not null,
-  `navio_idnavio` int not null,
-  `equipamento_idequipamento (capacete)` int not null,
-  `equipamento_idequipamento (armadura)` int not null,
-  `equipamento_idequipamento (botas)` int not null,
-  `armas_idarmas (espada)` int not null,
-  `armas_idarmas (pistola)` int not null,
+  `navio_idnavio` int,
+  `equipamento_idequipamento (capacete)` int,
+  `equipamento_idequipamento (armadura)` int,
+  `equipamento_idequipamento (botas)` int,
+  `armas_idarmas (espada)` int,
+  `armas_idarmas (pistola)` int,
   index `fk_equipado_navio1_idx` (`navio_idnavio` asc) visible,
   index `fk_equipado_equipamento1_idx` (`equipamento_idequipamento (capacete)` asc) visible,
   index `fk_equipado_equipamento2_idx` (`equipamento_idequipamento (armadura)` asc) visible,

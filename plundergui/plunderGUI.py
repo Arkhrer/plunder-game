@@ -7,10 +7,11 @@ import datetime
 #from turtle import bgcolor
 from PIL import ImageTk, Image
 
-
+#Conector pra Windows
 #conn = mysql.connector.connect(user = "root", host = "localhost", passwd = "123456", database='plunderdb')
+#cursor = conn.cursor()
 
-#conector pro Jonas
+#conector pro Jonas / comentar o mariadb se não for o Jonas
 conn = mariadb.connect(user = "arkhrer", host = "localhost", password = "Af1732ab!", database='plunderdb')
 cursor = conn.cursor()
 
@@ -69,7 +70,7 @@ def criaCadastro():
     botaoCadastra.config(bg = corBaseBotao)
     botaoCadastra.place(x=80, y = 300)
 
-#Ações a serem executadas quando o botão for pressionado
+#=====FUNÇÃO DE CADASTRO---------#
 def cadastraCheck(userEnt, passwordEnt, emailEnt, pergEnt, segEnt):
 
     usuario = userEnt.get()
@@ -116,9 +117,7 @@ def cadastraCheck(userEnt, passwordEnt, emailEnt, pergEnt, segEnt):
 
     janelaCriaPersonagem(conID)
 
-
 #------CRIACAO DE PERSONAGEM-----#
-
 def janelaCriaPersonagem(userID):
     global janelaPersonagem
 
@@ -144,7 +143,7 @@ def janelaCriaPersonagem(userID):
     botaoPersonagem.config(bg = corBaseBotao)
     botaoPersonagem.place(x=80, y = 245)
 
-
+#-FUÇÃO DE CRIAÇÂO DE PERSONAGEM-#
 def criaPersonagem(ID, entnome):
     nome = entnome.get()
     dataagora = datetime.datetime.now()
@@ -187,8 +186,6 @@ def criaPersonagem(ID, entnome):
             janelaPersonagem.destroy()
     except(NameError):
         pass
-    
-
 
 #----------JANELA LOGIN----------#
 def criaLogin():
@@ -227,7 +224,6 @@ def criaLogin():
     botaoLoga.place(x=80, y = 245)
     
 #--------FUNCAO DE LOGIN-----------#
-
 def loginCheck(userEnt, passwordEnt):
     username = userEnt.get()
     password = passwordEnt.get()
@@ -249,7 +245,6 @@ def loginCheck(userEnt, passwordEnt):
     else:
         print("deuruim")
     
-
 #----------JANELA HOME----------#
 def criaHome(idConta):
     global janelaHome
@@ -257,10 +252,8 @@ def criaHome(idConta):
     #Se houver alguma outra janela aberta, fecha ela antes de abrir a Home
 
     try:
-                
         if inicial.winfo_exists():
             inicial.destroy()
-
     except(NameError):
         pass
 
@@ -270,8 +263,7 @@ def criaHome(idConta):
     janelaHome.resizable(width=False, height=False)
     janelaHome.config(bg=corBaseJanela)
 
-    nomequery = "SELECT `nome` from `personagem` WHERE `conta_idconta`= %s"
-
+    nomequery = "SELECT `nome`, `nível`, `experiência`, `dinheiro`  from `personagem` WHERE `conta_idconta`= %s"
     cursor.execute(nomequery, (idConta,))
     oqueachou = cursor.fetchall()
     
@@ -283,17 +275,14 @@ def criaHome(idConta):
     infoFrame.place(x=215, y=60, width = 250, height = 350)
 
     #Labels que vão mostrar as informações
-    le1 = Label(infoFrame, text="Teste: VALORVALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le1 = Label(infoFrame, text=f"Nível: {oqueachou[0][1]}", bg=corBaseJanela, fg= 'white', font=('', 15))
     le1.pack(anchor="w", pady= (90, 5))
 
-    le2 = Label(infoFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le2 = Label(infoFrame, text=f"Experiencia: {oqueachou[0][2]}", bg=corBaseJanela, fg= 'white', font=('', 15))
     le2.pack(anchor="w", pady= 5)
 
-    le3 = Label(infoFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le3 = Label(infoFrame, text=f"Dinheiro: {oqueachou[0][3]}", bg=corBaseJanela, fg= 'white', font=('', 15))
     le3.pack(anchor="w", pady= 5)
-
-    le4 = Label(infoFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
-    le4.pack(anchor="w", pady= 5)
 
     #Botões do menu
 
@@ -333,7 +322,6 @@ def criaHome(idConta):
     leT5.pack(anchor="w", pady= 5, padx=(5, 0))
     leT6 = Label(timerFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 10))
     leT6.pack(anchor="w", pady= 5, padx=(5, 0))
-
 
 #----------JANELA LOJA----------#
 def criaLoja():
@@ -384,7 +372,6 @@ def criaLoja():
     botaoVende.config(bg = corBaseBotao)
     botaoVende.place(x=450, y = 420)
 
-
 #----------JANELA TRIPULAÇÃO----------#
 def criaTripulacao():
     janelaTripulacao = Tk()
@@ -405,7 +392,6 @@ def criaTripulacao():
     botaoContrata = Button(janelaTripulacao, width=21, height=4, relief='flat', text = "Contratar\nMembro", font=('', 15, 'bold')) #CONTRATA MEMBRO TRIPULAÇÃO, VALOR AUMENTA A CADA MEMBRO
     botaoContrata.config(bg = corBaseBotao)
     botaoContrata.pack(pady = 30)
-
 
 #----------JANELA NAVIO----------#
 def criaNavio():
@@ -492,7 +478,6 @@ def criaNavio():
 
     le4 = Label(infoInvFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
     le4.pack(anchor="w", pady= 5)
-
 
 #----------JANELA GUILDA----------#
 def criaGuilda():
@@ -598,11 +583,7 @@ def criaMar():
     le2 = Label(infoCharFrame, text="HP do navio: XXX", bg=corBaseJanela, fg= 'white', font=('', 15))
     le2.pack(anchor="w", pady= 5)
    
-
 #----------JANELA INICIAL-------------#
-corBaseJanela = '#434343' #Cinza escuro
-corBaseBotao = '#B9a82b' #Cinza
-
 def pagInicial():
 
     global inicial
@@ -629,10 +610,9 @@ def pagInicial():
     botaoLogin.place(x=400, y = 350)
     inicial.mainloop()
 
+corBaseJanela = '#434343' #Cinza escuro
+corBaseBotao = '#B9a82b' #Cinza
 
 pagInicial()
 
-
-
-
-#conn.close()
+conn.close()
