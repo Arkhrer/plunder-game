@@ -86,6 +86,7 @@ create table if not exists `plunderdb`.`personagem` (
   `dinheiro` varchar(45) not null,
   `data de criação` date not null,
   `guilda_idguilda` int null,
+  `HP` int not null,
   primary key (`idpersonagem`),
   index `fk_personagem_conta_idx` (`conta_idconta` asc) visible,
   index `fk_personagem_guilda1_idx` (`guilda_idguilda` asc) visible,
