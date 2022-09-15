@@ -146,14 +146,14 @@ def janelaCriaPersonagem(userID):
     botaoPersonagem.config(bg = corBaseBotao)
     botaoPersonagem.place(x=80, y = 245)
 
-#-FUÇÃO DE CRIAÇÂO DE PERSONAGEM-#
+#-FUNÇÃO DE CRIAÇÂO DE PERSONAGEM-#
 def criaPersonagem(ID, entnome):
     nome = entnome.get()
     dataagora = datetime.datetime.now()
     datacria = f"{dataagora.year}-{dataagora.month}-{dataagora.day}"
 
 
-    criaperquery = ("""INSERT INTO `personagem`(`conta_idconta`, `nome`, `nível`, `experiência`, `dinheiro`, `data de criação`) 
+    criaperquery = ("""INSERT INTO `personagem`(`conta_idconta`, `hp`, `nome`, `nível`, `experiência`, `dinheiro`, `data de criação`) 
     VALUES (%s, %s, %s, %s, %s, %s)""")
     criaatributosquery = ("""INSERT INTO `atributos`(`personagem_idpersonagem`, `ataque`, `defesa`, `destreza`, `sorte`, `carisma`, `velocidade`)
     VALUES (%s, %s, %s, %s, %s, %s, %s)""")
@@ -164,7 +164,7 @@ def criaPersonagem(ID, entnome):
     criatripulquery = ("""INSERT INTO `tripulação`(`personagem_idpersonagem`, `número`, `nível`, `experiência`)
     VALUES (%s, %s, %s, %s)""")
 
-    cursor.execute(criaperquery, (ID, nome, 1, 0, 0, datacria))
+    cursor.execute(criaperquery, (ID, 100, nome, 1, 0, 500, datacria))
     conn.commit()
 
     buscaID = "SELECT `idpersonagem` FROM `personagem` WHERE `conta_idconta` = %s"
@@ -172,7 +172,11 @@ def criaPersonagem(ID, entnome):
     oqueachou = cursor.fetchall()
     IDper = oqueachou[0][0]
 
-    cursor.execute(criaatributosquery, (IDper, 1, 1, 1, 1, 1, 1))
+    destrezaRand = random.randint(1, 4)
+    sorteRand = random.randint(2, 8)
+    velocidadeRand = random.randint(1, 5)
+
+    cursor.execute(criaatributosquery, (IDper, 1, 1, destrezaRand, sorteRand, 1, velocidadeRand))
     conn.commit()
 
     cursor.execute(criainventarioquery, (IDper, 350))
@@ -827,21 +831,30 @@ def criaMar(idpersonagem):
     entradaCoords.place(x=950, y=350)
     entradaCoords.insert(END, '0, 0')
 
-    botaoCoords = Button(janelaMar, width=19, height=3, relief='flat', text = "Viajar", command = lambda: viajaCoordenadas(entradaCoords, arrayMar, janelaMar))
+    botaoCoords = Button(janelaMar, width=19, height=3, relief='flat', text = "Viajar", command = lambda: viajaCoordenadas(entradaCoords, arrayMar, janelaMar, idpersonagem, le1, le2))
     botaoCoords.config(bg = corBaseBotao)
     botaoCoords.place(x= 970, y = 395)
 
     #Informações do personagem
+
+    navioAtualHpQuery = "SELECT nav.vida FROM navio as nav INNER JOIN equipado as equip on nav.idnavio = equip.navio_idnavio"
+    cursor.execute(navioAtualHpQuery, )
+    HpNavio = cursor.fetchall()
+
+    personagemHpQuery = "SELECT hp FROM personagem where idpersonagem = %s"
+    cursor.execute(personagemHpQuery, (idpersonagem,))
+    HpPersonagem = cursor.fetchall()
+
     textoChar = Label(janelaMar, font=('', 25), bg=corBaseJanela, fg='white', text='NOME')#Text TEMPORARIO, MUDAR COM A DATABASE
     textoChar.place(x = 950, y = 50)
 
     infoCharFrame = LabelFrame(janelaMar, borderwidth=1, relief="solid", bg = corBaseJanela, fg='white')
     infoCharFrame.place(x=950, y=95, width = 235, height = 100)
 
-    le1 = Label(infoCharFrame, text="HP do personagem: XXX", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le1 = Label(infoCharFrame, text=f"HP do personagem: {HpPersonagem[0][0]} ", bg=corBaseJanela, fg= 'white', font=('', 15))
     le1.pack(anchor="w", pady= (15, 5))
 
-    le2 = Label(infoCharFrame, text="HP do navio: XXX", bg=corBaseJanela, fg= 'white', font=('', 15))
+    le2 = Label(infoCharFrame, text=f"HP do navio: {HpNavio[0][0]}", bg=corBaseJanela, fg= 'white', font=('', 15))
     le2.pack(anchor="w", pady= 5)
 
 def criaMatrizMar():
@@ -860,49 +873,26 @@ def criaMatrizMar():
     arrayMar[18,19] = 1
     return arrayMar
 
-def viajaCoordenadas(entradaCoords, arrayMar, janelaMar):
+def viajaCoordenadas(entradaCoords, arrayMar, janelaMar, idpersonagem, le1, le2):
     x, y = map(int, entradaCoords.get().split(','))
     rand = random.randint(0, 15)
 
-    #Se descer em terra
+    #----------TERRA---------#
     if arrayMar[x][y] == 1:
+        
+        #Escolhe um inimigo aleatório dos 8 presentes no banco de dados
+        randomInimigo = random.randint(1,8)
+        selecionaInimigo = "SELECT ataque, defesa, destreza, sorte, velocidade from `npc inimigo` where `idnpc inimigo` = %s"
+        cursor.execute(selecionaInimigo, (randomInimigo,))
+        statusInimigo = cursor.fetchall()
+
+        dadosPersonagem = "SELECT ataque, defesa, destreza, sorte, velocidade from atributos where personagem_idpersonagem = %s"
+        cursor.execute(dadosPersonagem, (idpersonagem,))
+        statusPersonagem = cursor.fetchall()
 
         #Se o número aleatório for menor que 7, inicia combate.
         if rand <= 7:
-            janelaEvento = Toplevel(janelaMar)
-            janelaEvento.title('Combate!')
-            janelaEvento.geometry('300x300')
-            janelaEvento.resizable(width=False, height=False)
-            janelaEvento.config(bg=corBaseJanela)
-
-            le1 = Label(janelaEvento, text=f"Você ancora o navio e desce em terra firme. Se depara com um inimigo que possui x y z e é derrotado!", bg=corBaseJanela, fg= 'white', font=('', 15), justify='center', wraplength=250)
-            le1.pack(anchor="n", pady=(40, 10))
-
-        #Se o número aleatório for entre 8 e 9, acha tesouro.
-        elif rand > 7 and rand <= 9:
-            janelaEvento = Toplevel(janelaMar)
-            janelaEvento.title('Tesouro!')
-            janelaEvento.geometry('300x300')
-            janelaEvento.resizable(width=False, height=False)
-            janelaEvento.config(bg=corBaseJanela)
-        
-        #Se o número aleatório for entre 10 e 15, nada acontece.
-        else:
-            janelaEvento = Toplevel(janelaMar)
-            janelaEvento.title('Nada!')
-            janelaEvento.geometry('300x300')
-            janelaEvento.resizable(width=False, height=False)
-            janelaEvento.config(bg=corBaseJanela)
-            le1 = Label(janelaEvento, text=f"Nada de notável acontece.", bg=corBaseJanela, fg= 'white', font=('', 30), justify='center', wraplength=250)
-            le1.pack(anchor="n", pady=(70, 10))
-
-        print('TERRA')
-
-    #Se ficar no mar:
-    else:
-
-        #Se o número aleatório for menor ou igual a 7, inicia combate.
-        if rand <= 7:
+            
             janelaEvento = Toplevel(janelaMar)
             janelaEvento.title('Combate!')
             janelaEvento.geometry('300x300')
@@ -910,18 +900,152 @@ def viajaCoordenadas(entradaCoords, arrayMar, janelaMar):
             janelaEvento.config(bg=corBaseJanela)
 
             
-            le1 = Label(janelaEvento, text=f"Você avista um navio se aproximando no horizonte e se prepara para o combate.\n\n o Navio inimigo possui x y z. Você é derrotado!", bg=corBaseJanela, fg= 'white', font=('', 15), justify='center', wraplength=250)
-            le1.pack(anchor="n", pady=(40, 10))
+
+            #Pega a média dos atributos do inimigo e do personagem e as compara com um valor aleatório para decidir quem vai vencer.
+            MediaInimigo = (sum(statusInimigo[0]) / len(statusInimigo[0]))
+            MediaPersonagem = (sum(statusPersonagem[0]) / len(statusPersonagem[0]))
+
+            randomDecide = random.randint(1,30)
+            comparaInimigo = abs(randomDecide - MediaInimigo)
+            comparaPersonagem = abs(randomDecide - MediaPersonagem)
+
+            if comparaInimigo < comparaPersonagem:
+                
+                #Hp perdido = valor aleatório entre 1 e 5 multiplicado pelo ataque do inimigo, tudo subtraído pelo dobro da defesa do personagem
+                randomPerdeHP = random.randint(1, 5)
+                hpPerdido = (int(randomPerdeHP * statusInimigo[0][0]) - (statusPersonagem[0][1] * 2))
+
+                lEvento = Label(janelaEvento, text=f"Você ancora o navio e desce em terra firme. Se depara com um inimigo e é derrotado! Você perdeu {hpPerdido} de HP", bg=corBaseJanela, fg= 'white', font=('', 15), justify='center', wraplength=250)
+                lEvento.pack(anchor="n", pady=(40, 10))
+
+                atualizaHP = "Update personagem set hp = hp - %s where idpersonagem = %s"
+                cursor.execute(atualizaHP, (hpPerdido, idpersonagem,))
+                conn.commit()
+
+                hpQuery = "SELECT hp from personagem where idpersonagem = %s"
+                cursor.execute(hpQuery, (idpersonagem,))
+                hpAtual = cursor.fetchall()
+                le1.config(text = f'HP do personagem: {hpAtual[0][0]}')
+
+                
+
+            else:
+                randomRecompensa = random.randint(6, 20)
+                dinheiroGanho = int(randomRecompensa * MediaInimigo * int(statusPersonagem[0][3]/2))
+
+                lEvento = Label(janelaEvento, text=f"Você ancora o navio e desce em terra firme. Se depara com um inimigo e vence! Você ganhou {dinheiroGanho} dobrões!", bg=corBaseJanela, fg= 'white', font=('', 15), justify='center', wraplength=250)
+                lEvento.pack(anchor="n", pady=(40, 10))
+
+                atualizaDinheiro = "Update personagem set dinheiro = dinheiro + %s where idpersonagem = %s"
+                cursor.execute(atualizaDinheiro, (dinheiroGanho, idpersonagem))
+                conn.commit()
+
+        #Se o número aleatório for entre 8 e 9, acha tesouro.
+        elif rand > 7 and rand <= 9:
+
+            janelaEvento = Toplevel(janelaMar)
+            janelaEvento.title('Tesouro!')
+            janelaEvento.geometry('300x300')
+            janelaEvento.resizable(width=False, height=False)
+            janelaEvento.config(bg=corBaseJanela)
+
+            randomRecompensa = random.randint(100, 2000)
+            dinheiroGanho = int(randomRecompensa * int(statusPersonagem[0][3]/2))
+
+            lEvento = Label(janelaEvento, text=f"Você ancora o navio e desce em terra firme. Após caminhar por um tempo, você encontra um tesouro e ganha {dinheiroGanho} dobrões!", bg=corBaseJanela, fg= 'white', font=('', 15), justify='center', wraplength=250)
+            lEvento.pack(anchor="n", pady=(40, 10))
+
+            atualizaDinheiro = "Update personagem set dinheiro = dinheiro + %s where idpersonagem = %s"
+            cursor.execute(atualizaDinheiro, (dinheiroGanho, idpersonagem))
+            conn.commit()
         
-        #Se o número aleatório for entre 8 e 15, nada acontece.
+        #Se o número aleatório for entre 10 e 15, nada acontece.
         else:
+
             janelaEvento = Toplevel(janelaMar)
             janelaEvento.title('Nada!')
             janelaEvento.geometry('300x300')
             janelaEvento.resizable(width=False, height=False)
             janelaEvento.config(bg=corBaseJanela)
-            le1 = Label(janelaEvento, text=f"Nada de notável acontece.", bg=corBaseJanela, fg= 'white', font=('', 30), justify='center', wraplength=250)
-            le1.pack(anchor="n", pady=(70, 10))
+            lEvento = Label(janelaEvento, text=f"Nada de notável acontece.", bg=corBaseJanela, fg= 'white', font=('', 30), justify='center', wraplength=250)
+            lEvento.pack(anchor="n", pady=(70, 10))
+
+
+    #------------MAR----------#:
+    else:
+
+        #Escolhe um navio aleatório dos 8 presentes no banco de dados
+        randomNavio = random.randint(1,6)
+        selecionaNavio = "SELECT nome, ataque, defesa, destreza from navio where idnavio = %s"
+        cursor.execute(selecionaNavio, (randomNavio,))
+        statusNavioInimigo = cursor.fetchall()
+
+        dadosNavioAtual = "SELECT nav.vida, nav.ataque, nav.defesa, nav.destreza FROM navio as nav INNER JOIN equipado as equip on nav.idnavio = equip.navio_idnavio"
+        cursor.execute(dadosNavioAtual, )
+        statusNavioAtual = cursor.fetchall()
+
+        dadosTripulacao = "SELECT `número` from `tripulação` where personagem_idpersonagem = %s"
+        cursor.execute(dadosTripulacao, (idpersonagem,))
+        numeroTripulantes = cursor.fetchall()
+
+        #Se o número aleatório for menor ou igual a 7, inicia combate.
+        if rand <= 7:
+            
+            janelaEvento = Toplevel(janelaMar)
+            janelaEvento.title('Combate!')
+            janelaEvento.geometry('300x300')
+            janelaEvento.resizable(width=False, height=False)
+            janelaEvento.config(bg=corBaseJanela)
+            
+            #A média do navio do personagem é somada com o número de tripulantes contratados para aumentar a chance de sucesso
+            randomDecide = random.randint(1, 40)
+            MediaInimigo = (sum(statusNavioInimigo[0][1:]) / len(statusNavioInimigo[0][1:]))
+            MediaPersonagem = (sum(statusNavioAtual[0][1:]) + numeroTripulantes[0][0]) / len(statusNavioAtual[0][1:])
+
+            comparaInimigo = abs(randomDecide - MediaInimigo)
+            comparaPersonagem = abs(randomDecide - MediaPersonagem)
+
+            if comparaInimigo < comparaPersonagem:
+
+                randomPerdeHP = random.randint(5, 20)
+                hpPerdido = (int(randomPerdeHP * statusNavioInimigo[0][1]) - (statusNavioAtual[0][2] * 2))
+
+                lEvento = Label(janelaEvento, text=f"Você avista um navio do tipo {statusNavioInimigo[0][0]} se aproximando no horizonte e se prepara para o combate. Após uma intensa batalha, você é derrotado e foge! Seu navio perdeu {hpPerdido} de HP!", bg=corBaseJanela, fg= 'white', font=('', 15), justify='center', wraplength=250)
+                lEvento.pack(anchor="n", pady=(40, 10))
+
+                #Busca o navio equipado pelo personagem e retira o HP perdido.
+                perdeHpNavio = "UPDATE navio INNER JOIN equipado on navio.idnavio = equipado.navio_idnavio SET navio.vida = navio.vida - %s"
+                cursor.execute(perdeHpNavio, (hpPerdido, ) )
+                conn.commit()
+
+                hpNavioQuery = "SELECT nav.vida FROM navio as nav INNER JOIN equipado as equip on nav.idnavio = equip.navio_idnavio"
+                cursor.execute(hpNavioQuery, )
+                hpAtualNavio = cursor.fetchall()
+                le2.config(text = f'HP do Navio: {hpAtualNavio[0][0]}')
+
+            else:
+
+                randomDinheiro = random.randint(1, 7)
+                dinheiroGanho = randomDinheiro * 10 * MediaInimigo
+
+                lEvento = Label(janelaEvento, text=f"Você avista um navio do tipo {statusNavioInimigo[0][0]} se aproximando no horizonte e se prepara para o combate. Após uma intensa batalha, você o afunda e vence! Você ganhou {dinheiroGanho} dobrões!", bg=corBaseJanela, fg= 'white', font=('', 15), justify='center', wraplength=250)
+                lEvento.pack(anchor="n", pady=(40, 10))
+
+                atualizaDinheiro = "Update personagem set dinheiro = dinheiro + %s where idpersonagem = %s"
+                cursor.execute(atualizaDinheiro, (dinheiroGanho, idpersonagem))
+                conn.commit()
+            
+        
+        #Se o número aleatório for entre 8 e 15, nada acontece.
+        else:
+
+            janelaEvento = Toplevel(janelaMar)
+            janelaEvento.title('Nada!')
+            janelaEvento.geometry('300x300')
+            janelaEvento.resizable(width=False, height=False)
+            janelaEvento.config(bg=corBaseJanela)
+            lEvento = Label(janelaEvento, text=f"Nada de notável acontece.", bg=corBaseJanela, fg= 'white', font=('', 30), justify='center', wraplength=250)
+            lEvento.pack(anchor="n", pady=(70, 10))
         print('MAR')
 
 
