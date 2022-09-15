@@ -4,6 +4,7 @@ from tkinter import ttk
 import mysql.connector
 import mariadb
 import datetime
+import time
 #from turtle import bgcolor
 from PIL import ImageTk, Image
 
@@ -234,21 +235,29 @@ def loginCheck(userEnt, passwordEnt):
 
     oqueachou = cursor.fetchall()
 
-    if len(oqueachou) > 0:
+    pegaid = "SELECT `idpersonagem` FROM `personagem` WHERE `conta_idconta` = %s"
+
+    cursor.execute(pegaid, (oqueachou[0][0],))
+
+    oqueachou2 = cursor.fetchall()
+
+    idpersonagem = oqueachou2[0][0]
+
+    if len(oqueachou2) > 0:
         try:  
             if janelaLogin.winfo_exists():
                 janelaLogin.destroy()
 
         except(NameError):
             pass
-        criaHome(oqueachou[0][0])
+        criaHome(oqueachou2[0][0])
     else:
         print("deuruim")
     
 #----------JANELA HOME----------#
-def criaHome(idConta):
+def criaHome(idpersonagem):
     global janelaHome
-
+    
     #Se houver alguma outra janela aberta, fecha ela antes de abrir a Home
 
     try:
@@ -256,15 +265,15 @@ def criaHome(idConta):
             inicial.destroy()
     except(NameError):
         pass
-
+    
     janelaHome = Tk()
     janelaHome.title("Plunder")
-    janelaHome.geometry('700x450')
+    janelaHome.geometry('550x450')
     janelaHome.resizable(width=False, height=False)
     janelaHome.config(bg=corBaseJanela)
 
-    nomequery = "SELECT `nome`, `nível`, `experiência`, `dinheiro`  from `personagem` WHERE `conta_idconta`= %s"
-    cursor.execute(nomequery, (idConta,))
+    nomequery = "SELECT `nome`, `nível`, `experiência`, `dinheiro`  from `personagem` WHERE `idpersonagem`= %s"
+    cursor.execute(nomequery, (idpersonagem,))
     oqueachou = cursor.fetchall()
     
     textoNome = Label(janelaHome,font=('', 25), bg=corBaseJanela, fg='white', text=oqueachou[0][0])#Text TEMPORARIO, MUDAR COM A DATABASE
@@ -286,45 +295,47 @@ def criaHome(idConta):
 
     #Botões do menu
 
-    botaoLoja = Button(janelaHome, width=20, height=2, text = "Loja", relief='flat', command = criaLoja)
+    botaoLoja = Button(janelaHome, width=20, height=2, text = "Loja", relief='flat', command = lambda: criaLoja(idpersonagem))
     botaoLoja.config(bg = corBaseBotao)
     botaoLoja.pack(anchor="w", pady=(70, 10), padx=(20, 0))
 
-    botaoTripulacao = Button(janelaHome, width=20, height=2, text = "Tripulação", relief='flat', command = criaTripulacao)
+    botaoTripulacao = Button(janelaHome, width=20, height=2, text = "Tripulação", relief='flat', command = lambda: criaTripulacao(idpersonagem))
     botaoTripulacao.config(bg = corBaseBotao)
     botaoTripulacao.pack(anchor="w", pady=10, padx=(20, 0))
 
-    botaoNavio = Button(janelaHome, width=20, height=2, text = "Navio", relief='flat', command = criaNavio)
+    botaoNavio = Button(janelaHome, width=20, height=2, text = "Navio", relief='flat', command = lambda: criaNavio(idpersonagem))
     botaoNavio.config(bg = corBaseBotao)
     botaoNavio.pack(anchor="w", pady=10, padx=(20, 0))
 
-    botaoGuilda = Button(janelaHome, width=20, height=2, text = "Guilda", relief='flat', command = criaGuilda)
+    botaoGuilda = Button(janelaHome, width=20, height=2, text = "Guilda", relief='flat', command = lambda: criaGuilda(idpersonagem))
     botaoGuilda.config(bg = corBaseBotao)
     botaoGuilda.pack(anchor="w", pady=10, padx=(20, 0))
 
-    botaoMar = Button(janelaHome, width=14, height=5, text = "MAR", font=('', 15, 'bold'), relief='flat', command = criaMar)
+    botaoMar = Button(janelaHome, width=14, height=5, text = "MAR", font=('', 15, 'bold'), relief='flat', command = lambda: criaMar(idpersonagem))
     botaoMar.config(bg = corBaseBotao)
     botaoMar.pack(anchor="w", pady=30, padx=(20, 0))
+    
+    #Atualiza dados da HOME
+    janelaHome.after(100,lambda: atualizahome(idpersonagem, le1, le2, le3))
 
-    #Frame de timer de atividades
-    timerFrame = LabelFrame(janelaHome, borderwidth=1, relief="solid", bg = corBaseJanela, fg='white')
-    timerFrame.place(x=490, y=25, width = 200, height = 400)
 
-    leT1 = Label(timerFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 10))
-    leT1.pack(anchor="w", pady= (90, 5), padx=(5, 0))
-    leT2 = Label(timerFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 10))
-    leT2.pack(anchor="w", pady= 5, padx=(5, 0))
-    leT3 = Label(timerFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 10))
-    leT3.pack(anchor="w", pady= 5, padx=(5, 0))
-    leT4 = Label(timerFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 10))
-    leT4.pack(anchor="w", pady= 5, padx=(5, 0))
-    leT5 = Label(timerFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 10))
-    leT5.pack(anchor="w", pady= 5, padx=(5, 0))
-    leT6 = Label(timerFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 10))
-    leT6.pack(anchor="w", pady= 5, padx=(5, 0))
+#---------ATUALIZA HOME----------#
+def atualizahome(idpersonagem, le1, le2, le3):
+    nomequery = "SELECT `nome`, `nível`, `experiência`, `dinheiro`  from `personagem` WHERE `idpersonagem`= %s"
+    cursor.execute(nomequery, (idpersonagem,))
+    oqueachou = cursor.fetchall()
+
+    le1.config(text=f"Nível: {oqueachou[0][1]}")
+
+    le2.config(text=f"Experiencia: {oqueachou[0][2]}")
+
+    le3.config(text=f"Dinheiro: {oqueachou[0][3]}")
+
+    janelaHome.after(100,lambda: atualizahome(idpersonagem, le1, le2, le3))
+
 
 #----------JANELA LOJA----------#
-def criaLoja():
+def criaLoja(idpersonagem):
     janelaLoja = Tk()
     janelaLoja.title('Loja')
     janelaLoja.geometry('700x550')
@@ -339,8 +350,17 @@ def criaLoja():
     lojaLoja.place(x = 25, y = 60, width = 300, height = 350)
 
     #Popula a lista da loja
-    listaLoja = [{'Nome': 'Laranja', 'Preco': '500 Dobrões'},
-               {'Nome': 'Espada', 'Preco': '5000 Dobrões' },]  # Lista de dicionários, cada item da lista é uma linha na loja - POPULAR COM ITENS DO BANCO DE DADOS
+
+    itensquery = "SELECT `nome i`, `preço de compra` FROM `item`"
+    cursor.execute(itensquery)
+    oqueachou = cursor.fetchall()
+
+    tam = len(oqueachou)
+
+    listaLoja = []
+
+    for i in range(tam):
+        listaLoja = listaLoja + [{'Nome': oqueachou[i][0], 'Preco': oqueachou[i][1]}]
 
     maxspace = len(max(listaLoja, key=lambda x:len(x['Nome']))['Nome']) + 6
     for i in range(len(listaLoja)):
@@ -360,8 +380,19 @@ def criaLoja():
     lojaInventario = Listbox(janelaLoja, bg = corBaseJanela, selectmode = 'single', relief = 'flat', font =('TkDefaultFont 11', 13), fg = 'white')
     lojaInventario.place(x = 375, y = 60, width = 300, height = 350)
 
-    listaInv = [{'Nome': 'Laranja', 'Preco': '500 Dobrões'},
-               {'Nome': 'Espada', 'Preco': '5000 Dobrões' },]  # Lista de dicionários, cada item da lista é uma linha na loja - POPULAR COM ITENS DO BANCO DE DADOS
+    invquery = "select `item`.`nome i`, `item`.`preço de venda` from `item` right join `inventário tem item` on `inventário tem item`.`item_iditem` = `item`.`iditem` where `inventário_personagem_idpersonagem` = %s"
+    cursor.execute(invquery,(idpersonagem, ))
+    oqueachou = cursor.fetchall()
+
+    tam = len(oqueachou)
+
+    listaInv = []
+
+    for i in range(tam):
+        listaInv = listaInv + [{'Nome': oqueachou[i][0], 'Preco': oqueachou[i][1]}]
+
+    # listaInv = [{'Nome': 'Laranja', 'Preco': '500 Dobrões'},
+    #            {'Nome': 'Espada', 'Preco': '5000 Dobrões' },]  # Lista de dicionários, cada item da lista é uma linha na loja - POPULAR COM ITENS DO BANCO DE DADOS
 
     maxspace = len(max(listaInv, key=lambda x:len(x['Nome']))['Nome']) + 6
     for i in range(len(listaInv)):
@@ -373,28 +404,66 @@ def criaLoja():
     botaoVende.place(x=450, y = 420)
 
 #----------JANELA TRIPULAÇÃO----------#
-def criaTripulacao():
+def criaTripulacao(idpersonagem):
     janelaTripulacao = Tk()
     janelaTripulacao.title('Tripulação')
     janelaTripulacao.geometry('300x400')
     janelaTripulacao.resizable(width=False, height=False)
     janelaTripulacao.config(bg=corBaseJanela)
 
+    tripQuery = "SELECT `número`  from `tripulação` WHERE `personagem_idpersonagem`= %s"
+    cursor.execute(tripQuery, (idpersonagem,))
+    oqueachou = cursor.fetchall()
+    tripnum = int(oqueachou[0][0])
+
+    dinheiroQuery = "SELECT `dinheiro`  from `personagem` WHERE `idpersonagem`= %s"
+    cursor.execute(dinheiroQuery, (idpersonagem,))
+    oqueachou2 = cursor.fetchall()
+    dinheiro = int(oqueachou2[0][0])
+
     textoTrip = Label(janelaTripulacao ,font=('', 35), bg=corBaseJanela, fg='white', text='Tripulação')#Text TEMPORARIO, MUDAR COM A DATABASE
     textoTrip.pack(pady = 15)
 
-    textoMembros = Label(janelaTripulacao ,font=('', 20), bg=corBaseJanela, fg='white', text='0 Membros')#Quantidade variável
+    textoMembros = Label(janelaTripulacao ,font=('', 20), bg=corBaseJanela, fg='white', text=f'{oqueachou[0][0]} Membros')#Quantidade variável
     textoMembros.pack(pady = (30, 10))
 
     textoValorMembro = Label(janelaTripulacao ,font=('', 20), bg=corBaseJanela, fg='white', text='100 Dobrões\n por membro')#Quantidade variável
     textoValorMembro.pack(pady = (30, 10))
 
-    botaoContrata = Button(janelaTripulacao, width=21, height=4, relief='flat', text = "Contratar\nMembro", font=('', 15, 'bold')) #CONTRATA MEMBRO TRIPULAÇÃO, VALOR AUMENTA A CADA MEMBRO
+    botaoContrata = Button(janelaTripulacao, width=21, height=4, relief='flat', text = "Contratar\nMembro", font=('', 15, 'bold'), command =lambda: contrataTrip(oqueachou, dinheiro, botaoContrata, idpersonagem, textoMembros)) #CONTRATA MEMBRO TRIPULAÇÃO, VALOR AUMENTA A CADA MEMBRO
     botaoContrata.config(bg = corBaseBotao)
     botaoContrata.pack(pady = 30)
 
+    if tripnum >= 20 or dinheiro < 100:
+        botaoContrata["state"] = DISABLED
+        
+        
+
+def contrataTrip(oqueachou, dinheiro, botaoContrata, idpersonagem, textoMembros):
+    numeroAtual = oqueachou[0][0]
+    if numeroAtual >= 20 or dinheiro < 100:
+        botaoContrata["state"] = DISABLED
+    else:
+        dinheiro -= 100
+        compraTrip = "UPDATE `tripulação` set `número` = `número` + 1 WHERE `personagem_idpersonagem`= %s"
+        cursor.execute(compraTrip, (idpersonagem,))
+        conn.commit()
+        dinheiroUpdate = "UPDATE `personagem` set `dinheiro` = `dinheiro` - 100 WHERE `idpersonagem`= %s"
+        cursor.execute(dinheiroUpdate, (idpersonagem,))
+        conn.commit()
+            
+        tripQuery = "SELECT `número`  from `tripulação` WHERE `personagem_idpersonagem`= %s"
+        cursor.execute(tripQuery, (idpersonagem,))
+        numeroTrip = cursor.fetchall()
+        textoMembros.config(text = f"{numeroTrip[0][0]} Membros")
+
+        
+
+        
+
+
 #----------JANELA NAVIO----------#
-def criaNavio():
+def criaNavio(idpersonagem):
     janelaNavio = Tk()
     janelaNavio.title('Cais')
     janelaNavio.geometry('1200x550')
@@ -480,7 +549,7 @@ def criaNavio():
     le4.pack(anchor="w", pady= 5)
 
 #----------JANELA GUILDA----------#
-def criaGuilda():
+def criaGuilda(idpersonagem):
     janelaGuilda = Tk()
     janelaGuilda.title('Guilda')
     janelaGuilda.geometry('700x450')
@@ -525,7 +594,7 @@ def criaGuilda():
     botaoEntraG.place(x=385, y = 340)
 
 #----------JANELA MAR-------------#
-def criaMar():
+def criaMar(idpersonagem):
     janelaMar = Toplevel(janelaHome)
     janelaMar.title('Plunder')
     janelaMar.geometry('1200x750')
@@ -533,7 +602,7 @@ def criaMar():
     janelaMar.config(bg=corBaseJanela)
 
     #Mapa do jogo
-    Mapa = ImageTk.PhotoImage(file = 'PlunderMapa.png')
+    Mapa = ImageTk.PhotoImage(file = 'plundergui/PlunderMapa.png')
     plunderMapa = Label(janelaMar, image = Mapa)
     plunderMapa.pack()
     plunderMapa.config(bg = corBaseJanela)
@@ -582,7 +651,8 @@ def criaMar():
 
     le2 = Label(infoCharFrame, text="HP do navio: XXX", bg=corBaseJanela, fg= 'white', font=('', 15))
     le2.pack(anchor="w", pady= 5)
-   
+
+
 #----------JANELA INICIAL-------------#
 def pagInicial():
 
