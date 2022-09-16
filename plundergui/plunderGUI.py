@@ -325,7 +325,7 @@ def criaHome(idpersonagem):
     ImagemPerfil = ImageTk.PhotoImage(image = imageNormal)
 
     Perfil = Label(janelaHome, image = ImagemPerfil)#Text TEMPORARIO, MUDAR COM A DATABASE
-    Perfil.place(x=285, y=15)
+    Perfil.place(x=245, y=15)
 
     #Frame que segura as informações no centro da página
     infoFrame = LabelFrame(janelaHome, borderwidth=1, relief="solid", bg = corBaseJanela, fg='white')
