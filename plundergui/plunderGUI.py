@@ -416,8 +416,9 @@ def criaLoja(idpersonagem):
     for i in range(len(listaLoja)):
         lojaLoja.insert(END, f"{listaLoja[i]['Nome'].ljust(maxspace)}{listaLoja[i]['Preco'].ljust(maxspace)}")
 
+
     #Botão de comprar itens
-    botaoCompra = Button(janelaLoja, width=21, height=4, relief='flat', text = "Comprar") # COLOCAR COMANDO QUE EXECUTA A COMPRA DE ACORDO COM O PREÇO
+    botaoCompra = Button(janelaLoja, width=21, height=4, relief='flat', text = "Comprar", command = lambda: lojacompra(idpersonagem, lojaLoja)) # COLOCAR COMANDO QUE EXECUTA A COMPRA DE ACORDO COM O PREÇO
     botaoCompra.config(bg = corBaseBotao)
     botaoCompra.place(x=87, y = 420)
 
@@ -449,9 +450,97 @@ def criaLoja(idpersonagem):
         lojaInventario.insert(END, f"{listaInv[i]['Nome'].ljust(maxspace)}{listaInv[i]['Preco'].rjust(maxspace)}")
 
 
-    botaoVende = Button(janelaLoja, width=21, height=4, relief='flat', text = "Vender") # COLOCAR COMANDO QUE EXECUTA A VENDA DE ACORDO COM O PREÇO
+    botaoVende = Button(janelaLoja, width=21, height=4, relief='flat', text = "Vender", command = lambda: lojavende(idpersonagem, lojaInventario)) # COLOCAR COMANDO QUE EXECUTA A VENDA DE ACORDO COM O PREÇO
     botaoVende.config(bg = corBaseBotao)
     botaoVende.place(x=450, y = 420)
+
+#-------LOJA COMPRA---------------#
+def lojacompra(idpersonagem, lojain):
+    selecao = lojain.curselection()
+    item = lojain.get(selecao[0])
+    nomeitem = ''
+
+    for i in range(len(item)):
+        if (item[i] == ' ' and item[i + 1] == ' '):
+            break
+        else:
+            nomeitem = nomeitem + item[i]
+
+    selectitem = 'select iditem,`preço de compra` from item where `nome i` = %s'
+    cursor.execute(selectitem, (nomeitem,))
+    oqueachou = cursor.fetchall()
+    itemid = oqueachou[0][0]
+    preco = int(oqueachou [0][1])
+
+    encontranoinv = 'select * from `inventário tem item` where item_iditem = %s and inventário_personagem_idpersonagem = %s'
+    cursor.execute(encontranoinv, (itemid, idpersonagem))
+    oqueachou1 = cursor.fetchall()
+
+    dinheiroquery = 'select `dinheiro` from personagem where idpersonagem = %s'
+    cursor.execute(dinheiroquery, (idpersonagem,))
+    oqueachou2 = cursor.fetchall()
+    dinheiro = int(oqueachou2[0][0])
+
+    print(f'{dinheiro} < {preco}?')
+
+    if (dinheiro < preco):
+        print('sem grana man')
+    else:
+        if (len(oqueachou1) > 0):
+            increitem = 'update `inventário tem item` set quantidade = quantidade + 1 where item_iditem = %s and inventário_personagem_idpersonagem = %s '
+            cursor.execute(increitem, (itemid, idpersonagem))
+            conn.commit()
+        else:
+            insereitem = 'insert into `inventário tem item`(`inventário_personagem_idpersonagem`, `item_iditem`, `quantidade`) values (%s, %s, %s)'
+            cursor.execute(insereitem, (idpersonagem, itemid, 1))
+            conn.commit()
+
+        subdinheiroquery = 'update personagem set dinheiro = dinheiro - %s where idpersonagem = %s'
+        cursor.execute(subdinheiroquery, (preco, idpersonagem))
+        conn.commit()
+
+#-------LOJA VENDE---------------#
+def lojavende(idpersonagem, lojain):
+    selecao = lojain.curselection()
+    item = lojain.get(selecao[0])
+    nomeitem = ''
+
+    for i in range(len(item)):
+        if (item[i] == ' ' and item[i + 1] == ' '):
+            break
+        else:
+            nomeitem = nomeitem + item[i]
+
+    selectitem = 'select iditem,`preço de venda` from item where `nome i` = %s'
+    cursor.execute(selectitem, (nomeitem,))
+    oqueachou = cursor.fetchall()
+    itemid = oqueachou[0][0]
+    preco = int(oqueachou [0][1])
+    print(f"{nomeitem} id: {itemid} preço: {preco}")
+
+    encontranoinv = 'select * from `inventário tem item` where item_iditem = %s and inventário_personagem_idpersonagem = %s'
+    cursor.execute(encontranoinv, (itemid, idpersonagem))
+    oqueachou1 = cursor.fetchall()
+    quantos = int(oqueachou1[0][2])
+
+    dinheiroquery = 'select `dinheiro` from personagem where idpersonagem = %s'
+    cursor.execute(dinheiroquery, (idpersonagem,))
+    oqueachou2 = cursor.fetchall()
+    dinheiro = int(oqueachou2[0][0])
+
+
+    if (len(oqueachou1) > 0):
+        if (quantos > 1):
+            decreitem = 'update `inventário tem item` set quantidade = quantidade - 1 where item_iditem = %s and inventário_personagem_idpersonagem = %s'
+            cursor.execute(decreitem, (itemid, idpersonagem))
+            conn.commit()
+        else:
+            remitem = 'delete from `inventário tem item` where item_iditem = %s and inventário_personagem_idpersonagem = %s'
+            cursor.execute(remitem,(itemid, idpersonagem))
+            conn.commit()
+        subdinheiroquery = 'update personagem set dinheiro = dinheiro + %s where idpersonagem = %s'
+        cursor.execute(subdinheiroquery, (preco, idpersonagem))
+        conn.commit()
 
 #----------JANELA TRIPULAÇÃO----------#
 def criaTripulacao(idpersonagem):
@@ -514,6 +603,27 @@ def criaNavio(idpersonagem):
     janelaNavio.resizable(width=False, height=False)
     janelaNavio.config(bg=corBaseJanela)
 
+    itensquery = "SELECT `nome` , `preço compra` FROM `navio`"
+    cursor.execute(itensquery)
+    oqueachou = cursor.fetchall()
+    tam = len(oqueachou)
+
+    listaCais = []
+
+    for i in range(tam):
+        listaCais = listaCais + [{'Nome': oqueachou[i][0], 'Preco': f'{oqueachou[i][1]} Dobrões'}]
+
+    invquery = "select `navio`.`nome`, `navio`.`preço venda` from `navio` right join `personagem_has_navio` on `personagem_has_navio`.`navio_idnavio` = `navio`.`idnavio` where `personagem_has_navio`.`personagem_idpersonagem` = %s"
+    cursor.execute(invquery,(idpersonagem, ))
+    oqueachou1 = cursor.fetchall()
+    tam1 = len(oqueachou1)
+
+    listaInv = []
+
+    for i in range(tam1):
+        listaInv = listaInv + [{'Nome': oqueachou1[i][0], 'Preco': f'{oqueachou1[i][1]} Dobrões'}]
+
+
     textoCais = Label(janelaNavio, font=('', 25), bg=corBaseJanela, fg='white', text='Cais')
     textoCais.place(x = 120, y = 10)
 
@@ -521,17 +631,13 @@ def criaNavio(idpersonagem):
     lojaCais = Listbox(janelaNavio, bg = corBaseJanela, selectmode = 'single', relief = 'flat', font =('TkDefaultFont 11', 13), fg = 'white')
     lojaCais.place(x = 25, y = 60, width = 300, height = 350)
 
-    #Popula a lista do cais
-    listaCais = [{'Nome': 'Escuna', 'Preco': '15000 Dobrões'},
-               {'Nome': 'Galeão', 'Preco': '50000 Dobrões' },
-               {'Nome': 'Canoa', 'Preco': '2000 Dobrões'}]  # Lista de dicionários, cada item da lista é uma linha na loja - POPULAR COM ITENS DO BANCO DE DADOS
 
     maxspace = len(max(listaCais, key=lambda x:len(x['Nome']))['Nome']) + 6
     for i in range(len(listaCais)):
         lojaCais.insert(END, f"{listaCais[i]['Nome'].ljust(maxspace)}{listaCais[i]['Preco'].rjust(maxspace)}")
 
     #Botão de comprar navios
-    botaoCompra = Button(janelaNavio, width=21, height=4, relief='flat', text = "Comprar") # COLOCAR COMANDO QUE EXECUTA A COMPRA DE ACORDO COM O PREÇO
+    botaoCompra = Button(janelaNavio, width=21, height=4, relief='flat', text = "Comprar", command = lambda: compraNavio(idpersonagem, lojaCais)) # COLOCAR COMANDO QUE EXECUTA A COMPRA DE ACORDO COM O PREÇO
     botaoCompra.config(bg = corBaseBotao)
     botaoCompra.place(x=87, y = 420)
 
@@ -563,15 +669,12 @@ def criaNavio(idpersonagem):
     lojaFrota = Listbox(janelaNavio, bg = corBaseJanela, selectmode = 'single', relief = 'flat', font =('TkDefaultFont 11', 13), fg = 'white')
     lojaFrota.place(x = 605, y = 60, width = 300, height = 350)
 
-    listaInv = [{'Nome': 'Laranja', 'Preco': '500 Dobrões'},
-               {'Nome': 'Espada', 'Preco': '5000 Dobrões' },]  # Lista de dicionários, cada item da lista é uma linha na loja - POPULAR COM ITENS DO BANCO DE DADOS
-
     maxspace = len(max(listaInv, key=lambda x:len(x['Nome']))['Nome']) + 6
     for i in range(len(listaInv)):
         lojaFrota.insert(END, f"{listaInv[i]['Nome'].ljust(maxspace)}{listaInv[i]['Preco'].rjust(maxspace)}")
 
 
-    botaoEquipa = Button(janelaNavio, width=21, height=4, relief='flat', text = "Definir como\nprincipal") # COLOCAR COMANDO QUE ALTERA O NAVIO PRINCIPAL
+    botaoEquipa = Button(janelaNavio, width=21, height=4, relief='flat', text = "Definir como\nprincipal", command = lambda: equipaNavio(idpersonagem, lojaFrota)) # COLOCAR COMANDO QUE ALTERA O NAVIO PRINCIPAL
     botaoEquipa.config(bg = corBaseBotao)
     botaoEquipa.place(x=675, y = 420)
 
@@ -591,6 +694,73 @@ def criaNavio(idpersonagem):
 
     le4 = Label(infoInvFrame, text="Teste: VALOR", bg=corBaseJanela, fg= 'white', font=('', 15))
     le4.pack(anchor="w", pady= 5)
+
+def compraNavio(idpersonagem, navioin):
+    selecao = navioin.curselection()
+    navio = navioin.get(selecao[0])
+    nomenavio = ''
+
+    for i in range(len(navio)):
+        if (navio[i] == ' ' and navio[i + 1] == ' '):
+            break
+        else:
+            nomenavio = nomenavio + navio[i]
+
+    selectnavio = 'select idnavio, `preço compra` from navio where nome = %s'
+
+    cursor.execute(selectnavio, (nomenavio,))
+    oqueachou0 = cursor.fetchall()
+    idnavio = oqueachou0[0][0]
+    preco = int(oqueachou0[0][1])
+
+    encontranoinv = 'select * from personagem_has_navio where navio_idnavio = %s and personagem_idpersonagem = %s'
+    cursor.execute(encontranoinv, (idnavio, idpersonagem))
+    oqueachou1 = cursor.fetchall()
+
+    dinheiroquery = 'select `dinheiro` from personagem where idpersonagem = %s'
+    cursor.execute(dinheiroquery, (idpersonagem,))
+    oqueachou2 = cursor.fetchall()
+    dinheiro = int(oqueachou2[0][0])
+
+    if (len(oqueachou1) > 0):
+        print('ja tem 1 desse chefia')
+    else:
+        if (dinheiro < preco):
+            print('sem grana man')
+        else:
+            inserenavio = 'insert into personagem_has_navio(personagem_idpersonagem, navio_idnavio) values (%s, %s)'
+            cursor.execute(inserenavio,(idpersonagem, idnavio))
+            conn.commit()
+
+            subdinheiroquery = 'update personagem set dinheiro = dinheiro - %s where idpersonagem = %s'
+            cursor.execute(subdinheiroquery, (preco, idpersonagem))
+            conn.commit()
+
+def equipaNavio(idpersonagem, navioin):
+    selecao = navioin.curselection()
+    navio = navioin.get(selecao[0])
+    nomenavio = ''
+
+    for i in range(len(navio)):
+        if (navio[i] == ' ' and navio[i + 1] == ' '):
+            break
+        else:
+            nomenavio = nomenavio + navio[i]
+
+    selectnavio = 'select idnavio, `preço compra` from navio where nome = %s'
+
+    cursor.execute(selectnavio, (nomenavio,))
+    oqueachou0 = cursor.fetchall()
+    idnavio = oqueachou0[0][0]
+
+    encontranoinv = 'select * from personagem_has_navio where navio_idnavio = %s and personagem_idpersonagem = %s'
+    cursor.execute(encontranoinv, (idnavio, idpersonagem))
+    oqueachou1 = cursor.fetchall()
+
+    if (len(oqueachou1) > 0):
+        equipaquery = 'update equipado set navio_idnavio = %s where personagem_idpersonagem = %s'
+        cursor.execute(equipaquery,(idnavio, idpersonagem))
+        conn.commit()
 
 #----------JANELA GUILDA----------#
 def criaGuilda(idpersonagem):
