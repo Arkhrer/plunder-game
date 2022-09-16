@@ -1,13 +1,18 @@
 #from ssl import _PasswordType
+import imghdr
 from tkinter import *
 from tkinter import ttk
+from tkinter import filedialog
+from tkinter.filedialog import askopenfile
 import mysql.connector
 #import mariadb
 import datetime
 import time
 import numpy as np
 import random
+import io
 #from turtle import bgcolor
+import PIL
 from PIL import ImageTk, Image
 
 #Conector pra Windows
@@ -130,21 +135,45 @@ def janelaCriaPersonagem(userID):
     except(NameError):
         pass
 
-    janelaPersonagem = Tk()
+    janelaPersonagem = Toplevel()
     janelaPersonagem.title("Criação de Personagem")
-    janelaPersonagem.geometry('320x350')
+    janelaPersonagem.geometry('350x550')
     janelaPersonagem.resizable(width=False, height=False)
     janelaPersonagem.config(bg=corBaseJanela)
 
+    textoImagem = Label(janelaPersonagem,font=('', 15), bg=corBaseJanela, fg='white', text="Imagem de perfil:")
+    textoImagem.place(x=95, y=10)
+
+    botaoImagem = Button(janelaPersonagem, width=20, height=4, text = "Escolher imagem", command = lambda: upload_imagem())
+    botaoImagem.config(bg = corBaseBotao)
+    botaoImagem.place(x=100, y = 270)
+
     textoNome = Label(janelaPersonagem,font=('', 15), bg=corBaseJanela, fg='white', text="Nome do\nPersonagem:")
-    textoNome.place(x=20, y=115)
+    textoNome.place(x=20, y=365)
     
     entradaNome = Entry(janelaPersonagem, width=30, justify='left', relief='solid')
-    entradaNome.place(x=110, y=120)
+    entradaNome.place(x=150, y=375)
 
     botaoPersonagem = Button(janelaPersonagem, width=20, height=4, text = "Criar", command=lambda: criaPersonagem(userID, entradaNome))
     botaoPersonagem.config(bg = corBaseBotao)
-    botaoPersonagem.place(x=80, y = 245)
+    botaoPersonagem.place(x=100, y = 440)
+
+#Upload de imagem de perfil do personagem
+def upload_imagem():
+    global imgByte
+    global imgPerfil
+    tipoArquivo = [('Jpg Files', '.jpg')]
+    nomeArquivo = filedialog.askopenfilename(filetypes = tipoArquivo)
+    img = Image.open(nomeArquivo)
+    img_ajustada = img.resize((200,200))
+    imgPerfil = ImageTk.PhotoImage(img_ajustada)
+    botaoImg = Label(janelaPersonagem, image = imgPerfil)
+    botaoImg.place(x = 70, y = 45)
+
+    imgByte = io.BytesIO()
+    img_ajustada.save(imgByte, format = 'PNG')
+    imgByte = imgByte.getvalue()
+  
 
 #-FUNÇÃO DE CRIAÇÂO DE PERSONAGEM-#
 def criaPersonagem(ID, entnome):
@@ -153,18 +182,18 @@ def criaPersonagem(ID, entnome):
     datacria = f"{dataagora.year}-{dataagora.month}-{dataagora.day}"
 
 
-    criaperquery = ("""INSERT INTO `personagem`(`conta_idconta`, `hp`, `nome`, `nível`, `experiência`, `dinheiro`, `data de criação`) 
-    VALUES (%s, %s, %s, %s, %s, %s)""")
+    criaperquery = ("""INSERT INTO `personagem`(`conta_idconta`, `hp`, `nome`, `nível`, `experiência`, `dinheiro`, `data de criação`, `Avatar`) 
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""")
     criaatributosquery = ("""INSERT INTO `atributos`(`personagem_idpersonagem`, `ataque`, `defesa`, `destreza`, `sorte`, `carisma`, `velocidade`)
     VALUES (%s, %s, %s, %s, %s, %s, %s)""")
     criainventarioquery = ("""INSERT INTO `inventário`(`personagem_idpersonagem`, `peso total`)
     VALUES (%s, %s)""")
-    criaequipadoquery = ("""INSERT INTO `equipado`(`personagem_idpersonagem`)
-    VALUES (%s)""")
+    criaequipadoquery = ("""INSERT INTO `equipado`(`personagem_idpersonagem`, `navio_idnavio`)
+    VALUES (%s, %s)""")
     criatripulquery = ("""INSERT INTO `tripulação`(`personagem_idpersonagem`, `número`, `nível`, `experiência`)
     VALUES (%s, %s, %s, %s)""")
 
-    cursor.execute(criaperquery, (ID, 100, nome, 1, 0, 500, datacria))
+    cursor.execute(criaperquery, (ID, 100, nome, 1, 0, 500, datacria, imgByte))
     conn.commit()
 
     buscaID = "SELECT `idpersonagem` FROM `personagem` WHERE `conta_idconta` = %s"
@@ -182,7 +211,7 @@ def criaPersonagem(ID, entnome):
     cursor.execute(criainventarioquery, (IDper, 350))
     conn.commit()
 
-    cursor.execute(criaequipadoquery, (IDper,))
+    cursor.execute(criaequipadoquery, (IDper, 6))
     conn.commit()
 
     cursor.execute(criatripulquery, (IDper, 0, 1, 0))
@@ -263,6 +292,7 @@ def loginCheck(userEnt, passwordEnt):
 #----------JANELA HOME----------#
 def criaHome(idpersonagem):
     global janelaHome
+    global ImagemPerfil
     
     #Se houver alguma outra janela aberta, fecha ela antes de abrir a Home
 
@@ -285,13 +315,27 @@ def criaHome(idpersonagem):
     textoNome = Label(janelaHome,font=('', 25), bg=corBaseJanela, fg='white', text=oqueachou[0][0])#Text TEMPORARIO, MUDAR COM A DATABASE
     textoNome.place(x=285, y=15)
 
+    #Carrega imagem BLOB do banco de dados, converte o binário em ImageTK e mostra na Home
+    imageQuery = "SELECT Avatar from personagem where idpersonagem = %s"
+    cursor.execute(imageQuery, (idpersonagem,))
+    imagemBin = cursor.fetchall()
+    image_data = imagemBin[0][0]
+    imageNormal = Image.open(io.BytesIO(image_data))
+    imageNormal.load()
+    ImagemPerfil = ImageTk.PhotoImage(image = imageNormal)
+
+    Perfil = Label(janelaHome, image = ImagemPerfil)#Text TEMPORARIO, MUDAR COM A DATABASE
+    Perfil.place(x=285, y=15)
+
     #Frame que segura as informações no centro da página
     infoFrame = LabelFrame(janelaHome, borderwidth=1, relief="solid", bg = corBaseJanela, fg='white')
-    infoFrame.place(x=215, y=60, width = 250, height = 350)
+    infoFrame.place(x=215, y=250, width = 250, height = 150)
 
     #Labels que vão mostrar as informações
+
+
     le1 = Label(infoFrame, text=f"Nível: {oqueachou[0][1]}", bg=corBaseJanela, fg= 'white', font=('', 15))
-    le1.pack(anchor="w", pady= (90, 5))
+    le1.pack(anchor="w", pady= (20, 5))
 
     le2 = Label(infoFrame, text=f"Experiencia: {oqueachou[0][2]}", bg=corBaseJanela, fg= 'white', font=('', 15))
     le2.pack(anchor="w", pady= 5)
@@ -798,7 +842,7 @@ def criaMar(idpersonagem):
     janelaMar.config(bg=corBaseJanela)
 
     #Mapa do jogo
-    Mapa = ImageTk.PhotoImage(file = 'plundergui/PlunderMapa.png')
+    Mapa = ImageTk.PhotoImage(file = 'PlunderMapa.png')
     plunderMapa = Label(janelaMar, image = Mapa)
     plunderMapa.pack()
     plunderMapa.config(bg = corBaseJanela)
@@ -1060,13 +1104,13 @@ def pagInicial():
     inicial.resizable(width=False, height=False)
     inicial.config(bg=corBaseJanela)
 
-    logo = ImageTk.PhotoImage(image = Image.open(r'plundergui/Plunderlogo.png'))
+    logo = ImageTk.PhotoImage(image = Image.open(r'Plunderlogo.png'))
     plunderLogo = Label(image = logo)
     plunderLogo.place(x=350, y =200, anchor=CENTER)
     plunderLogo.config(bg = corBaseJanela)
 
     #Abre a janela de cadastro
-    botaoCadastro = Button(inicial, width=20, height=4, relief='flat', text = "Cadastro", command=criaCadastro)
+    botaoCadastro = Button(inicial, width=20, height=4, relief='flat', text = "Cadastro", command= lambda: criaCadastro()) #VOLTAR PARA CRIA CADSTRO
     botaoCadastro.config(bg = corBaseBotao)
     botaoCadastro.place(x=160, y = 350)
 

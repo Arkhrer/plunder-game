@@ -87,6 +87,7 @@ create table if not exists `plunderdb`.`personagem` (
   `data de criação` date not null,
   `guilda_idguilda` int null,
   `HP` int not null,
+  `Avatar` mediumblob not null,
   primary key (`idpersonagem`),
   index `fk_personagem_conta_idx` (`conta_idconta` asc) visible,
   index `fk_personagem_guilda1_idx` (`guilda_idguilda` asc) visible,
@@ -193,6 +194,7 @@ create table if not exists `plunderdb`.`navio` (
   `defesa` int not null,
   `ataque` int not null,
   `destreza` int null,
+  `preço` int not null,
   primary key (`idnavio`))
 engine = innodb;
 
